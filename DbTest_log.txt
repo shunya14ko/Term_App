@@ -1,0 +1,5 @@
+✅ MySQL接続成功！
+ok
+ok
+ok
+ok

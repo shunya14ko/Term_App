@@ -1,4 +1,4 @@
-using NewsApp.Components;
+using TermApp.Components;
 
 var builder = WebApplication.CreateBuilder(args);
 

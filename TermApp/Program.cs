@@ -1,4 +1,5 @@
 using TermApp.Components;
+using TermApp.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -17,12 +18,12 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-
-
 app.UseAntiforgery();
 
 app.MapStaticAssets();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
+
+await DbConnect.TestConnectionAsync(app.Logger);
 
 app.Run();

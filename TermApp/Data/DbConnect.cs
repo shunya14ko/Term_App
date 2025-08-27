@@ -5,7 +5,7 @@ namespace TermApp.Data;
 
 public static class DbConnect
 {
-    private static string BuildConnectionString()
+    public static string BuildConnectionString()
     {
         var b = new MySqlConnectionStringBuilder
         {
@@ -21,6 +21,8 @@ public static class DbConnect
         return b.ConnectionString;
     }
 
+
+    //下記DB診断用
     public static async Task TestConnectionAsync(ILogger logger)
     {
         await using var conn = new MySqlConnection(BuildConnectionString());

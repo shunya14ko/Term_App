@@ -3,7 +3,7 @@ using System.Text;
 using TermApp.Components;
 using TermApp.Dbconn;
 using TermApp.Models;
-using TermApp.Repositories;
+using TermApp.Service.Ripository;
 
 class Program
 {
@@ -40,15 +40,16 @@ class Program
         builder.Services
         .AddRazorComponents()
         .AddInteractiveServerComponents();
-
          
         builder.Services.AddScoped<ICrudRepository<Term>, TermRepository>();
+        builder.Services.AddScoped<ICrudRepository<Note>, NoteRepository>();
+        builder.Services.AddScoped<ICrudRepository<Group>, GroupRepository>();
 
         builder.Services
           .AddRazorComponents()
           .AddInteractiveServerComponents(o => { o.DetailedErrors = true; });
 
-
+        //Service in
         var app = builder.Build();
 
         if (!app.Environment.IsDevelopment())

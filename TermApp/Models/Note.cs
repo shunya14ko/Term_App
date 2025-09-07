@@ -17,7 +17,7 @@ namespace TermApp.Models;
 public class Note
 {
     [Key, ForeignKey(nameof(Term)), Column("term_id")]
-    public long TermId { get; set; }   // 共有主キー
+    public long TermId { get; set; }
 
     public Term Term { get; set; } = null!;
 

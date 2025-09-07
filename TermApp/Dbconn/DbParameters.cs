@@ -1,6 +1,7 @@
-﻿// TermApp/Data/DbParameters.cs
-namespace TermApp.Data;
+﻿namespace TermApp.Dbconn;
 
+//DB接続情報
+//パラメーター化
 public static class DbParameters
 {
     public const string Host = "localhost";

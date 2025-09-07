@@ -16,7 +16,7 @@ namespace TermApp.Models;
 
 [Index(nameof(ParentId))]
 [Table("note_groups")]
-public class NoteGroup
+public class Group
 {
     [Key, Column("id")]
     public long Id { get; set; }
@@ -28,10 +28,10 @@ public class NoteGroup
     public long? ParentId { get; set; }
 
     [ForeignKey(nameof(ParentId))]
-    public NoteGroup? Parent { get; set; }
+    public Group? Parent { get; set; }
 
     [InverseProperty(nameof(Parent))]
-    public virtual List<NoteGroup> Subgroups { get; } = new();
+    public virtual List<Group> Subgroups { get; } = new();
 
     [InverseProperty(nameof(Term.Group))]
     public virtual List<Term> Terms { get; } = new();

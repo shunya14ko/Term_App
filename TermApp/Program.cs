@@ -1,30 +1,71 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
+using System.Text;
 using TermApp.Components;
-using TermApp.Data;
+using TermApp.Dbconn;
+using TermApp.Models;
+using TermApp.Repositories;
 
-var builder = WebApplication.CreateBuilder(args);
-
-// Add services to the container.
-builder.Services.AddRazorComponents()
-    .AddInteractiveServerComponents();
-
-var app = builder.Build();
-
-// Configure the HTTP request pipeline.
-if (!app.Environment.IsDevelopment())
+class Program
 {
-    app.UseExceptionHandler("/Error", createScopeForErrors: true);
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
-    app.UseHsts();
+    //app settings
+
+    static void Main()
+    {
+        var builder = WebApplication.CreateBuilder();
+
+        //utf8？？
+        Console.OutputEncoding = Encoding.UTF8;
+        Console.InputEncoding = Encoding.UTF8;
+
+        //db connect
+        try
+        {
+            var conn = DbConnect.BuildConnectionString();
+            //EFの設定、ALLDbの
+            builder.Services.AddDbContext<AllDbContext>(options =>
+            {
+                options.UseMySql(conn, ServerVersion.AutoDetect(conn));
+            });
+            Console.WriteLine("\n---DB接続成功---\n");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"\n---DB接続成功---\n{ex}");
+            throw;
+        }
+
+
+#warning //ここからの処理を変更する
+        //Razor Components
+        builder.Services
+        .AddRazorComponents()
+        .AddInteractiveServerComponents();
+
+         
+        builder.Services.AddScoped<ICrudRepository<Term>, TermRepository>();
+
+        builder.Services
+          .AddRazorComponents()
+          .AddInteractiveServerComponents(o => { o.DetailedErrors = true; });
+
+
+        var app = builder.Build();
+
+        if (!app.Environment.IsDevelopment())
+        {
+            app.UseExceptionHandler("/Error", createScopeForErrors: true);
+            app.UseHsts();
+        }
+
+        app.UseHttpsRedirection();
+        app.UseAntiforgery();
+
+        app.MapStaticAssets();
+        app.MapRazorComponents<App>()
+            .AddInteractiveServerRenderMode();
+
+        app.Run();
+    }
+
 }
 
-app.UseHttpsRedirection();
-app.UseAntiforgery();
-
-app.MapStaticAssets();
-app.MapRazorComponents<App>()
-    .AddInteractiveServerRenderMode();
-
-await DbConnect.TestConnectionAsync(app.Logger);
-
-app.Run();

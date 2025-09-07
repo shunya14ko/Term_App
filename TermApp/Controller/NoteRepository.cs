@@ -1,4 +1,4 @@
-﻿namespace TermApp.Data.Repositories
+﻿namespace TermApp.Repositories
 {
     public class NoteRepository
     {

@@ -1,0 +1,71 @@
+﻿@page "/terms"
+@using TermApp.Models
+@using TermApp.Repositories
+@inject ICrudRepository<Term> Repo
+@inject NavigationManager Nav
+
+<h3>用語一覧</h3>
+
+<button class="btn btn-primary btn-sm mb-3"
+        @onclick="@(() => Nav.NavigateTo("/terms/new"))">
+    新規作成
+</button>
+
+@if (_items is null)
+{
+    <p>Loading...</p>
+}
+else if (_items.Count == 0)
+{
+    <p>データなし。</p>
+}
+else
+{
+    <table class="table table-sm table-striped">
+        <thead>
+            <tr>
+                <th>Id</th>
+                <th>名前</th>
+                <th>作成日</th>
+                <th class="text-end">操作</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var t in _items)
+            {
+                <tr>
+                    <td>@t.Id</td>
+                    <td>@t.Name</td>
+                    <td>@t.CreatedAt</td>
+                    <td class="text-end">
+                        <button class="btn btn-outline-secondary btn-sm me-2"
+                                @onclick="@(() => Nav.NavigateTo($"/terms/edit/{t.Id}"))">
+                            編集
+                        </button>
+
+                        <button class="btn btn-outline-danger btn-sm"
+                                @onclick="@(async () => await Delete(t.Id))">
+                            削除
+                        </button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private List<Term>? _items;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _items = (await Repo.GetAllAsync()).ToList();
+    }
+
+    private async Task Delete(long id)
+    {
+        // ICrudRepository.DeleteAsync は Task 戻りの想定に合わせる
+        await Repo.DeleteAsync(id);
+        _items = (await Repo.GetAllAsync()).ToList();
+    }
+}

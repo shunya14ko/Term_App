@@ -1,12 +1,10 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using TermApp.Dbconn;
 using TermApp.Models;
 
-namespace TermApp.Service.Ripository;
+namespace TermApp.Service.Repository;
 
 public class NoteRepository : ICrudRepository<Note>
 {
@@ -44,6 +42,7 @@ public class NoteRepository : ICrudRepository<Note>
     }
 
     //検索機能を持たないので、未実装
-    public Task<Note?> GetByIdAsync(long id, CancellationToken ct = default)
-    => throw new NotImplementedException();
+    public async Task<Note?> GetByIdAsync(long id, CancellationToken ct = default)
+        => await _db.DbNote.FindAsync(id, ct);
+
 }

@@ -1,7 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using TermApp.Models;
 
-namespace TermApp.Service.Ripository
+namespace TermApp.Service.Repository
 
 {
     public interface ICrudRepository<T>

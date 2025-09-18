@@ -1,0 +1,96 @@
+﻿@page "/terms/new"
+@using TermApp.Models
+@using TermApp.Service.Repository
+@inject ICrudRepository<Term> TermRepo
+@inject ICrudRepository<Group> GroupRepo
+@inject ICrudRepository<Note> NoteRepo
+@inject NavigationManager Nav
+
+<h3 class="mb-3">用語の新規作成</h3>
+
+<EditForm Model="_form" OnValidSubmit="SaveAsync" FormName="NewTermForm">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <div class="mb-3">
+        <label class="form-label">名前（必須）</label>
+        <InputText class="form-control" @bind-Value="_form.Name" />
+        <ValidationMessage For="@(() => _form.Name)" />
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">説明</label>
+        <InputTextArea class="form-control" rows="5" @bind-Value="_form.Note" />
+        @* 必要なら個別メッセージ *@
+        @* <ValidationMessage For="@(() => _form.Note)" /> *@
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">グループ</label>
+        <InputSelect class="form-select" @bind-Value="_form.GroupId">
+            <option value="">（未選択）</option>
+            @foreach (var g in _groups)
+            {
+                <option value="@g.Id">@g.Name</option>
+            }
+        </InputSelect>
+        @* 必要なら個別メッセージ *@
+        @* <ValidationMessage For="@(() => _form.GroupId)" /> *@
+    </div>
+
+    <div class="d-flex gap-2">
+        <button class="btn btn-primary" type="submit">保存</button>
+    </div>
+</EditForm>
+
+
+@code {
+
+    // 画面用フォームモデル（Validation付き）
+    private sealed class TermForm
+    {
+        public string Name { get; set; } = string.Empty;
+
+        public string? Note { get; set; }
+
+        public long? GroupId { get; set; }
+    }
+
+    private TermForm _form = new();
+
+    // ドロップダウンリストのロード
+    private List<Group> _groups = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        var items = await GroupRepo.GetAllAsync();
+        _groups = items?.ToList() ?? new List<Group>();
+    }
+
+    private async Task SaveAsync()
+    {
+        // 1) Term を作成・保存
+        var term = new Term
+        {
+            Name = _form.Name.Trim(),
+            CreatedAt = DateTime.UtcNow,
+            GroupId = _form.GroupId
+        };
+        await TermRepo.AddAsync(term);
+
+        // 2) Note（説明）が入力されていれば Note テーブルへ保存
+        if (!string.IsNullOrWhiteSpace(_form.Note))
+        {
+            var note = new Note
+            {
+                TermId = term.Id,                 // 共有主キー/外部キー
+                Content = _form.Note!.Trim(),     // DBのcontentカラム
+                UpdatedAt = DateTime.UtcNow
+            };
+            await NoteRepo.AddAsync(note);
+        }
+
+        // 3) 一覧へ戻る（ルートはプロジェクトの一覧ページに合わせて調整）
+        Nav.NavigateTo("/");
+    }
+}

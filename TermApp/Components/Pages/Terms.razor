@@ -1,71 +1,90 @@
 ﻿@page "/"
+@using Microsoft.AspNetCore.Components.QuickGrid   @* QuickGrid のタグを解決する *@
 @using TermApp.Models
-@using TermApp.Service.Ripository
-@inject ICrudRepository<Term> Repo
+@using TermApp.Service.Repository
+@inject ICrudRepository<Term> TermRepo
 @inject NavigationManager Nav
 
-<h3>用語一覧</h3>
+<PageTitle>IT用語一覧</PageTitle>
 
-<button class="btn btn-primary btn-sm mb-3"
-        @onclick="@(() => Nav.NavigateTo("/terms/new"))">
-    新規作成
-</button>
+<h1 class="mb-3">IT用語辞典</h1>
 
-@if (_items is null)
+@if (!string.IsNullOrEmpty(_pageError))
+{
+    <div class="alert alert-danger">@_pageError</div>
+}
+
+@if (_loading)
 {
     <p>Loading...</p>
 }
-else if (_items.Count == 0)
-{
-    <p>データなし。</p>
-}
 else
 {
-    <table class="table table-sm table-striped">
-        <thead>
-            <tr>
-                <th>Id</th>
-                <th>名前</th>
-                <th>作成日</th>
-                <th class="text-end">操作</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var t in _items)
-            {
-                <tr>
-                    <td>@t.Id</td>
-                    <td>@t.Name</td>
-                    <td>@t.CreatedAt</td>
-                    <td class="text-end">
-                        <button class="btn btn-outline-secondary btn-sm me-2"
-                                @onclick="@(() => Nav.NavigateTo($"/terms/edit/{t.Id}"))">
-                            編集
-                        </button>
+    <div class="d-flex gap-2 align-items-center mb-3">
+        <button class="btn btn-primary btn-sm" @onclick="GoNew">新規作成</button>
+    </div>
 
-                        <button class="btn btn-outline-danger btn-sm"
-                                @onclick="@(async () => await Delete(t.Id))">
-                            削除
-                        </button>
-                    </td>
-                </tr>
+    @* ▼ ポイント1: TGridItem を明示して型推論エラーを防ぐ *@
+    @* ▼ ポイント2: あなたの環境では Items が IQueryable<T> オーバーロードに解決されるため AsQueryable() を付与 *@
+    <QuickGrid TGridItem="Term" Items="_items.AsQueryable()" Class="table table-striped table-bordered">
+
+        @* モデルのプロパティに合わせて列を定義（Id/Name/CreatedAt 前提） *@
+        <PropertyColumn Title="ID" Property="@(p => p.Id)" Sortable="true" />
+        <PropertyColumn Title="名称" Property="@(p => p.Name)" Sortable="true" />
+
+        @* 版差で Format/FormatString が異なることがある。
+           まずは Format を使い、動作しない場合は TemplateColumn で ToString を使う。 *@
+        <PropertyColumn Title="作成日" Property="@(p => p.CreatedAt)" Sortable="true" Format="yyyy-MM-dd" />
+
+        @* (代替) テンプレ列版（確実に動く）
+        <TemplateColumn Title="作成日" Sortable="true" SortKeySelector="@(p => p.CreatedAt)">
+            @{
+                var dt = p.CreatedAt.Kind == DateTimeKind.Utc ? p.CreatedAt.ToLocalTime() : p.CreatedAt;
             }
-        </tbody>
-    </table>
+            @dt.ToString("yyyy-MM-dd")
+        </TemplateColumn>
+        *@
+    </QuickGrid>
+
+    @if (_items.Count == 0)
+    {
+        <div class="alert alert-info">データがありません。「新規作成」から追加してください。</div>
+    }
 }
 
 @code {
-    private List<Term>? _items;
+#warning //Todo　受取を25　テーブルカラムの右側に、詳細とeditとdeleteのボタンを追加する
+
+    // ▼ QuickGrid に渡すソース。まずは List でOK（大量なら ItemsProvider 方式へ）
+    private List<Term> _items = new();
+
+    private bool _loading = true;
+    private string? _pageError;
 
     protected override async Task OnInitializedAsync()
     {
-        _items = (await Repo.GetAllAsync()).ToList();
+        _loading = true;
+        try
+        {
+            // ▼ Repository から取得。IEnumerable を受けたら List 化して UI へ。
+            var list = await TermRepo.GetAllAsync();
+            _items = list?.ToList() ?? new List<Term>();
+
+            // ▼ 新しい順にしたいとき
+            // _items = _items.OrderByDescending(t => t.CreatedAt).ToList();
+        }
+        catch (Exception ex)
+        {
+            // ▼ UI とログの両方に通知（ILogger 推奨）
+            _pageError = "データの取得に失敗しました。時間をおいて再度お試しください。";
+            Console.WriteLine(ex);
+        }
+        finally
+        {
+            _loading = false;
+        }
     }
 
-    private async Task Delete(long id)
-    {
-        // ICrudRepository.DeleteAsync は Task 戻りの想定に合わせる
-        await Repo.DeleteAsync(id);
-        _items = (await Repo.GetAllAsync()).ToList();
-    }
+    // ▼ 新規作成ページへ遷移
+    private void GoNew() => Nav.NavigateTo("/terms/new");
 }

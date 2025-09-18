@@ -1,14 +1,8 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
-using TermApp.Dbconn;
+﻿using Microsoft.EntityFrameworkCore;
 using TermApp.Models;
-using System.Linq;
-using System;
 
-namespace TermApp.Service.Ripository;
+namespace TermApp.Service.Repository;
+
 public class TermRepository : ICrudRepository<Term>
 {
     private readonly AllDbContext _db;
@@ -50,14 +44,12 @@ public class TermRepository : ICrudRepository<Term>
         await _db.DbTerm.FindAsync(id, ct);
 
     //検索 部分一致
-#warning //呼び出し側でtry-catchで例外処理を行う
     public async Task<IReadOnlyList<Term>> SearchByNameAsync(string keyword, CancellationToken ct = default)
     {
         return await _db.DbTerm
             .Where(t => t.Name.Contains(keyword)
-            || t.Notes.Any(n => n.Content.Contains(keyword)))
+            || (t.Note != null && t.Note.Content != null && t.Note.Content.Contains(keyword)))
             .AsNoTracking()
             .ToListAsync(ct);
     }
-
 }

@@ -19,10 +19,9 @@ public class Term
     [Required, Key, Column("id")]
     public long Id { get; set; }
 
-    //Required: NULL禁止
     [Required, MaxLength(255), Column("name")]
     public string Name { get; set; } = string.Empty;
-    public ICollection<Note> Notes { get; set; } = new List<Note>();
+    public Note? Note { get; set; }
 
     [Required, Column("created_at")]
     public DateTime CreatedAt { get; set; }
@@ -32,6 +31,4 @@ public class Term
 
     [ForeignKey(nameof(GroupId))]
     public Group? Group { get; set; }
-
-    public Note? Note { get; set; }
 }

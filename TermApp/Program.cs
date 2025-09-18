@@ -3,15 +3,15 @@ using System.Text;
 using TermApp.Components;
 using TermApp.Dbconn;
 using TermApp.Models;
-using TermApp.Service.Ripository;
+using TermApp.Service.Repository;
 
 class Program
 {
     //app settings
 
-    static void Main()
+    static void Main(string[] args)
     {
-        var builder = WebApplication.CreateBuilder();
+        var builder = WebApplication.CreateBuilder(args);
 
         //utf8？？
         Console.OutputEncoding = Encoding.UTF8;
@@ -30,21 +30,14 @@ class Program
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"\n---DB接続成功---\n{ex}");
+            Console.WriteLine($"\n---DB接続失敗---\n{ex}");
             throw;
         }
 
-
-#warning //ここからの処理を変更する
-        //Razor Components
-        builder.Services
-        .AddRazorComponents()
-        .AddInteractiveServerComponents();
-         
+        //Razor Components @inject DIで使用
         builder.Services.AddScoped<ICrudRepository<Term>, TermRepository>();
         builder.Services.AddScoped<ICrudRepository<Note>, NoteRepository>();
         builder.Services.AddScoped<ICrudRepository<Group>, GroupRepository>();
-
         builder.Services
           .AddRazorComponents()
           .AddInteractiveServerComponents(o => { o.DetailedErrors = true; });
@@ -52,15 +45,14 @@ class Program
         //Service in
         var app = builder.Build();
 
+        //HTTP request pipeline
         if (!app.Environment.IsDevelopment())
         {
             app.UseExceptionHandler("/Error", createScopeForErrors: true);
             app.UseHsts();
         }
-
         app.UseHttpsRedirection();
         app.UseAntiforgery();
-
         app.MapStaticAssets();
         app.MapRazorComponents<App>()
             .AddInteractiveServerRenderMode();

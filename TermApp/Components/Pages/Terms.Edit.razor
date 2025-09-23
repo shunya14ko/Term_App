@@ -1,5 +1,49 @@
-﻿@page "/terms/edit/{Id:long}"
+﻿@* @page "/terms/edit/{Id:long}"
 @using TermApp.Service.Repository
 @inject ICrudRepository<Term> Repo
 @inject NavigationManager Nav
 
+<PageTitle>編集</PageTitle>
+
+<h1 class="mb-3">IT用語辞典</h1>
+
+@if (!string.IsNullOrEmpty(_pageError))
+{
+    <div class="alert alert-danger">@_pageError</div>
+}
+
+@if (_loading)
+{
+    <p>Loading...</p>
+}
+
+@code   
+    private List<Term> _items = new();
+
+    private bool _loading = true;
+    private string? _pageError;
+
+　　protected override async Task OnInitializedAsync()
+    {
+        _loading = true;
+        try
+        {
+            // ▼ Repository から取得。IEnumerable を受けたら List 化して UI へ。
+            var list = await TermRepo.GetAllAsync();
+            _items = list?.ToList() ?? new List<Term>();
+
+            // ▼ 新しい順にしたいとき
+            // _items = _items.OrderByDescending(t => t.CreatedAt).ToList();
+        }
+        catch (Exception ex)
+        {
+            // ▼ UI とログの両方に通知（ILogger 推奨）
+            _pageError = "データの取得に失敗しました。時間をおいて再度お試しください。";
+            Console.WriteLine(ex);
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+ *@

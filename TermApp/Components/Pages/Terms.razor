@@ -1,11 +1,13 @@
 ﻿@page "/"
-@using Microsoft.AspNetCore.Components.QuickGrid   @* QuickGrid のタグを解決する *@
+@using Microsoft.AspNetCore.Components.QuickGrid
 @using TermApp.Models
 @using TermApp.Service.Repository
 @inject ICrudRepository<Term> TermRepo
 @inject NavigationManager Nav
+@inject IJSRuntime JS
+@rendermode InteractiveServer
 
-<PageTitle>IT用語一覧</PageTitle>
+<PageTitle>保存用語一覧</PageTitle>
 
 <h1 class="mb-3">IT用語辞典</h1>
 
@@ -20,31 +22,35 @@
 }
 else
 {
-    <div class="d-flex gap-2 align-items-center mb-3">
-        <button class="btn btn-primary btn-sm" @onclick="GoNew">新規作成</button>
-    </div>
+    @* AsQueryable()：ここの処理はLinqを発行している *@
+    <QuickGrid TGridItem="Term"
+               Items="_items.AsQueryable()"
+               class="table table-striped table-bordered my-grid"
+               Pagination="@_paginationState">
 
-    @* ▼ ポイント1: TGridItem を明示して型推論エラーを防ぐ *@
-    @* ▼ ポイント2: あなたの環境では Items が IQueryable<T> オーバーロードに解決されるため AsQueryable() を付与 *@
-    <QuickGrid TGridItem="Term" Items="_items.AsQueryable()" Class="table table-striped table-bordered">
 
-        @* モデルのプロパティに合わせて列を定義（Id/Name/CreatedAt 前提） *@
-        <PropertyColumn Title="ID" Property="@(p => p.Id)" Sortable="true" />
+        <PropertyColumn Title="No" Property="@(p => p.Id)" Sortable="true" />
         <PropertyColumn Title="名称" Property="@(p => p.Name)" Sortable="true" />
-
-        @* 版差で Format/FormatString が異なることがある。
-           まずは Format を使い、動作しない場合は TemplateColumn で ToString を使う。 *@
         <PropertyColumn Title="作成日" Property="@(p => p.CreatedAt)" Sortable="true" Format="yyyy-MM-dd" />
 
-        @* (代替) テンプレ列版（確実に動く）
-        <TemplateColumn Title="作成日" Sortable="true" SortKeySelector="@(p => p.CreatedAt)">
-            @{
-                var dt = p.CreatedAt.Kind == DateTimeKind.Utc ? p.CreatedAt.ToLocalTime() : p.CreatedAt;
-            }
-            @dt.ToString("yyyy-MM-dd")
+        <TemplateColumn Title="詳細" Context="term">
+            <NavLink class="btn btn-sm btn-secondary" href="@($"/detailform/{term.Id}")">詳細</NavLink>
         </TemplateColumn>
-        *@
+
+        <TemplateColumn Title="編集" Context="term">
+            <NavLink class="btn btn-sm btn-primary" href="@($"/terms/edit/{term.Id}")">編集</NavLink>
+        </TemplateColumn>
+
+        <TemplateColumn Title="削除" Context="term">
+            <button type="button" class="btn btn-sm btn-danger align-items-center" @onclick="@(() => DeleteAsync(term.Id))">
+                削除
+            </button>
+        </TemplateColumn>
     </QuickGrid>
+
+    <div class="mt-2">
+        <Paginator State="@_paginationState" />
+    </div>
 
     @if (_items.Count == 0)
     {
@@ -53,29 +59,42 @@ else
 }
 
 @code {
-#warning //Todo　受取を25　テーブルカラムの右側に、詳細とeditとdeleteのボタンを追加する
-
-    // ▼ QuickGrid に渡すソース。まずは List でOK（大量なら ItemsProvider 方式へ）
+    // QuickGrid に渡すソース
     private List<Term> _items = new();
-
     private bool _loading = true;
     private string? _pageError;
 
+    // QuickGrid のページング設定
+    private readonly PaginationState _paginationState = new() { ItemsPerPage = 20 };
+
+
+    private async Task DeleteAsync(long id)
+    {
+        try
+        {
+            await TermRepo.DeleteAsync(id);
+            var idx = _items.FindIndex(t => t.Id == id);
+            if (idx >= 0) _items.RemoveAt(idx);
+        }
+        catch (Exception ex)
+        {
+            _pageError = $"削除に失敗しました。{ex}";
+        }
+    }
+
+    // 用語一覧のロード
     protected override async Task OnInitializedAsync()
     {
         _loading = true;
         try
         {
-            // ▼ Repository から取得。IEnumerable を受けたら List 化して UI へ。
             var list = await TermRepo.GetAllAsync();
             _items = list?.ToList() ?? new List<Term>();
-
-            // ▼ 新しい順にしたいとき
-            // _items = _items.OrderByDescending(t => t.CreatedAt).ToList();
+            _items = _items.OrderByDescending(t => t.CreatedAt).ToList();
         }
         catch (Exception ex)
         {
-            // ▼ UI とログの両方に通知（ILogger 推奨）
+            // （ILogger 推奨）これを実装する
             _pageError = "データの取得に失敗しました。時間をおいて再度お試しください。";
             Console.WriteLine(ex);
         }
@@ -84,6 +103,12 @@ else
             _loading = false;
         }
     }
+
+    // ▼ 詳細ページへ遷移
+    private void OpenDetail(long id) => Nav.NavigateTo($"/detailform/{id}");
+
+    // ▼ 編集ページへ遷移
+    private void GoEdit(long id) => Nav.NavigateTo($"/terms/edit/{id}");
 
     // ▼ 新規作成ページへ遷移
     private void GoNew() => Nav.NavigateTo("/terms/new");

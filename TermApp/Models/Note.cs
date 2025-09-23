@@ -25,5 +25,6 @@ public class Note
     public string? Content { get; set; }
 
     [Required]
+    [Column("updated_at")]
     public DateTime UpdatedAt { get; set; }
 }

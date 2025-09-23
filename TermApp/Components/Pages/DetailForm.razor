@@ -1,0 +1,78 @@
+﻿@page "/detailform/{id:long}"
+@using TermApp.Service.Repository
+@using TermApp.Models
+@inject ICrudRepository<Term> TermRepo
+@inject ICrudRepository<Note> NoteRepo
+@inject NavigationManager Nav
+@inject IJSRuntime JS
+
+<h3>詳細</h3>
+
+@if (_loading)
+{
+    <p>Loading...</p>
+}
+else if (!string.IsNullOrEmpty(_error))
+{
+    <div class="alert alert-danger">@_error</div>
+}
+else if (_item is null)
+{
+    <div class="alert alert-warning">データが見つかりません。</div>
+}
+else
+{
+    <dl>
+        <dt>ID</dt>
+        <dd>@_item.Id</dd>
+
+        <dt>名称</dt>
+        <dd>@_item.Name</dd>
+
+        <dt>作成日</dt>
+        <dd>@_item.CreatedAt.ToString("yyyy-MM-dd HH:mm")</dd>
+
+        <dt>内容</dt>
+        <dd>@(_item.Note?.Content ?? _note?.Content ?? "(メモなし)")</dd>
+    </dl>
+
+    <NavLink class="btn btn-sm btn-primary" href="@("/")">一覧に戻る</NavLink>
+}
+
+@code {
+    [Parameter] public long Id { get; set; }
+
+    private Term? _item;
+    private Note? _note;
+    private bool _loading = true;
+    private string? _error;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        _loading = true;
+        _error = null;
+        _item = null;
+        _note = null;
+
+        try
+        {
+            // Term取得（必要ならリポジトリ側で Include(Note) 対応）
+            _item = await TermRepo.GetByIdAsync(Id);
+
+            if (_item is null)
+            {
+                _error = "対象データが見つかりません。";
+                return;
+            }
+        }
+        catch (Exception ex)
+        {
+            _error = "詳細データを取得できませんでした。";
+            Console.Error.WriteLine(ex);
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+}

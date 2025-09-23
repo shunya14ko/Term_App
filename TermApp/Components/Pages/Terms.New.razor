@@ -1,12 +1,22 @@
 ﻿@page "/terms/new"
+@rendermode InteractiveServer
+@using System.ComponentModel.DataAnnotations
 @using TermApp.Models
 @using TermApp.Service.Repository
-@inject ICrudRepository<Term> TermRepo
+
+@inject ICrudRepository<TermApp.Models.Term> TermRepo
 @inject ICrudRepository<Group> GroupRepo
 @inject ICrudRepository<Note> NoteRepo
 @inject NavigationManager Nav
 
-<h3 class="mb-3">用語の新規作成</h3>
+<PageTitle>用語作成</PageTitle>
+
+<h1 class="mb-3">I用語追加</h1>
+
+@if (!string.IsNullOrEmpty(_pageError))
+{
+    <div class="alert alert-danger">@_pageError</div>
+}
 
 <EditForm Model="_form" OnValidSubmit="SaveAsync" FormName="NewTermForm">
     <DataAnnotationsValidator />
@@ -21,76 +31,98 @@
     <div class="mb-3">
         <label class="form-label">説明</label>
         <InputTextArea class="form-control" rows="5" @bind-Value="_form.Note" />
-        @* 必要なら個別メッセージ *@
-        @* <ValidationMessage For="@(() => _form.Note)" /> *@
     </div>
 
     <div class="mb-3">
         <label class="form-label">グループ</label>
-        <InputSelect class="form-select" @bind-Value="_form.GroupId">
+        <InputSelect class="form-select" TValue="long?" @bind-Value="_form.GroupId">
             <option value="">（未選択）</option>
             @foreach (var g in _groups)
             {
                 <option value="@g.Id">@g.Name</option>
             }
         </InputSelect>
-        @* 必要なら個別メッセージ *@
-        @* <ValidationMessage For="@(() => _form.GroupId)" /> *@
     </div>
 
     <div class="d-flex gap-2">
-        <button class="btn btn-primary" type="submit">保存</button>
+        <button class="btn btn-primary" type="submit" disabled="@_saving">保存</button>
+        <NavLink class="btn btn-secondary" href="/">キャンセル</NavLink>
     </div>
 </EditForm>
 
-
 @code {
-
-    // 画面用フォームモデル（Validation付き）
-    private sealed class TermForm
+    // 画面用フォームモデル（エンティティTermと衝突しない名前にする）
+    private sealed class TermFormModel
     {
+        [Required(ErrorMessage = "名称は必須です。")]
+        [StringLength(100)]
         public string Name { get; set; } = string.Empty;
 
+        [StringLength(2000)]
         public string? Note { get; set; }
 
+        // 未選択OKにするため nullable
         public long? GroupId { get; set; }
     }
 
-    private TermForm _form = new();
-
-    // ドロップダウンリストのロード
+    private TermFormModel _form = new();
     private List<Group> _groups = new();
+    private string? _pageError;
+    private bool _saving;
 
     protected override async Task OnInitializedAsync()
     {
-        var items = await GroupRepo.GetAllAsync();
-        _groups = items?.ToList() ?? new List<Group>();
+        try
+        {
+            var items = await GroupRepo.GetAllAsync();
+            _groups = items?.OrderBy(g => g.Name).ToList() ?? new();
+        }
+        catch (Exception ex)
+        {
+            _pageError = "グループ一覧の取得に失敗しました。";
+            Console.WriteLine(ex);
+        }
     }
 
     private async Task SaveAsync()
     {
-        // 1) Term を作成・保存
-        var term = new Term
-        {
-            Name = _form.Name.Trim(),
-            CreatedAt = DateTime.UtcNow,
-            GroupId = _form.GroupId
-        };
-        await TermRepo.AddAsync(term);
+        if (_saving) return;
+        _saving = true;
 
-        // 2) Note（説明）が入力されていれば Note テーブルへ保存
-        if (!string.IsNullOrWhiteSpace(_form.Note))
+        try
         {
-            var note = new Note
+            // 1) Term を作成・保存（エンティティは完全修飾名で明示）
+            var term = new TermApp.Models.Term
             {
-                TermId = term.Id,                 // 共有主キー/外部キー
-                Content = _form.Note!.Trim(),     // DBのcontentカラム
-                UpdatedAt = DateTime.UtcNow
+                Name      = _form.Name.Trim(),
+                GroupId   = _form.GroupId,
+                CreatedAt = DateTime.UtcNow
             };
-            await NoteRepo.AddAsync(note);
-        }
+            await TermRepo.AddAsync(term);
 
-        // 3) 一覧へ戻る（ルートはプロジェクトの一覧ページに合わせて調整）
-        Nav.NavigateTo("/");
+            // 2) 説明があれば Note テーブルへ
+            if (!string.IsNullOrWhiteSpace(_form.Note))
+            {
+                var note = new Note
+                {
+                    TermId    = term.Id,
+                    Content   = _form.Note.Trim(),
+                    UpdatedAt = DateTime.UtcNow
+                };
+                await NoteRepo.AddAsync(note);
+            }
+
+            // 3) 一覧へ戻る
+            Nav.NavigateTo("/");
+        }
+        catch (Exception ex)
+        {
+            _pageError = "保存に失敗しました。時間をおいて再度お試しください。";
+            Console.WriteLine(ex);
+        }
+        finally
+        {
+            _saving = false;
+        }
     }
 }

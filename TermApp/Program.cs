@@ -13,7 +13,7 @@ class Program
     {
         var builder = WebApplication.CreateBuilder(args);
 
-        //utf8？？
+        //utf8
         Console.OutputEncoding = Encoding.UTF8;
         Console.InputEncoding = Encoding.UTF8;
 

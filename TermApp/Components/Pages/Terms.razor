@@ -9,7 +9,7 @@
 
 <PageTitle>保存用語一覧</PageTitle>
 
-<h1 class="mb-3">IT用語辞典</h1>
+<h1 class="mb-3">■IT用語辞典■</h1>
 
 @if (!string.IsNullOrEmpty(_pageError))
 {
@@ -34,18 +34,27 @@ else
         <PropertyColumn Title="作成日" Property="@(p => p.CreatedAt)" Sortable="true" Format="yyyy-MM-dd" />
 
         <TemplateColumn Title="詳細" Context="term">
-            <NavLink class="btn btn-sm btn-secondary" href="@($"/detailform/{term.Id}")">詳細</NavLink>
+            <div class="text-center">
+                <NavLink class="btn btn-sm btn-secondary" href="@($"/detailform/{term.Id}")">詳細</NavLink>
+            </div>
         </TemplateColumn>
 
         <TemplateColumn Title="編集" Context="term">
-            <NavLink class="btn btn-sm btn-primary" href="@($"/terms/edit/{term.Id}")">編集</NavLink>
+            <div class="text-center">
+                <NavLink class="btn btn-sm btn-primary" href="@($"/terms/edit/{term.Id}")">編集</NavLink>
+            </div>
         </TemplateColumn>
 
         <TemplateColumn Title="削除" Context="term">
-            <button type="button" class="btn btn-sm btn-danger align-items-center" @onclick="@(() => DeleteAsync(term.Id))">
-                削除
-            </button>
+            <div class="text-center">
+                <button type="button"
+                        class="btn btn-sm btn-danger"
+                        @onclick="@(() => DeleteAsync(term.Id))">
+                    削除
+                </button>
+            </div>
         </TemplateColumn>
+
     </QuickGrid>
 
     <div class="mt-2">

@@ -7,58 +7,64 @@ using TermApp.Service.Repository;
 
 class Program
 {
-    //app settings
-
     static void Main(string[] args)
     {
         var builder = WebApplication.CreateBuilder(args);
 
-        //utf8
+        // 文字化け対策（コンソール）
         Console.OutputEncoding = Encoding.UTF8;
         Console.InputEncoding = Encoding.UTF8;
 
-        //db connect
+        // --- 設定読み込みの追加 ---
+        // Development の時だけ user-secrets も読む（init 済みなら自動だが明示しておく）
+        if (builder.Environment.IsDevelopment())
+        {
+            builder.Configuration.AddUserSecrets<Program>();
+        }
+        // 環境変数も読む（launchSettings.json の environmentVariables や OS 環境変数）
+        builder.Configuration.AddEnvironmentVariables();
+
+        // --- DB 接続 ---
         try
         {
-            var conn = DbConnect.BuildConnectionString();
-            //EFの設定、ALLDbの
+            // DbConnect は IConfiguration から値を読み、接続文字列を生成する実装にしておく
+            var conn = DbConnect.BuildConnectionString(builder.Configuration);
+
             builder.Services.AddDbContext<AllDbContext>(options =>
-            {
-                options.UseMySql(conn, ServerVersion.AutoDetect(conn));
-            });
+                options.UseMySql(conn, ServerVersion.AutoDetect(conn)));
+
             Console.WriteLine("\n---DB接続成功---\n");
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"\n---DB接続失敗---\n{ex}");
+            Console.WriteLine($"\n---DB接続失敗---\n{ex}\n");
             throw;
         }
 
-        //Razor Components @inject DIで使用
+        // DI
         builder.Services.AddScoped<ICrudRepository<Term>, TermRepository>();
         builder.Services.AddScoped<ICrudRepository<Note>, NoteRepository>();
         builder.Services.AddScoped<ICrudRepository<Group>, GroupRepository>();
-        builder.Services
-          .AddRazorComponents()
-          .AddInteractiveServerComponents(o => { o.DetailedErrors = true; });
 
-        //Service in
+        builder.Services
+            .AddRazorComponents()
+            .AddInteractiveServerComponents(o => { o.DetailedErrors = true; });
+
         var app = builder.Build();
 
-        //HTTP request pipeline
         if (!app.Environment.IsDevelopment())
         {
             app.UseExceptionHandler("/Error", createScopeForErrors: true);
             app.UseHsts();
         }
+
         app.UseHttpsRedirection();
         app.UseAntiforgery();
         app.MapStaticAssets();
+
         app.MapRazorComponents<App>()
-            .AddInteractiveServerRenderMode();
+           .AddInteractiveServerRenderMode();
 
         app.Run();
     }
-
 }
-

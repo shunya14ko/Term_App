@@ -1,23 +1,23 @@
-﻿using MySqlConnector;
+﻿// TermApp/Dbconn/DbConnect.cs
+using Microsoft.Extensions.Configuration;
 
 namespace TermApp.Dbconn;
 
 public static class DbConnect
 {
-    public static string BuildConnectionString()
+    public static string BuildConnectionString(IConfiguration cfg)
     {
-        var conn = new MySqlConnectionStringBuilder
-        {
-            Server = DbParameters.Host,
-            Port = DbParameters.Port,
-            Database = DbParameters.Database,
-            UserID = DbParameters.UserId,
-            Password = DbParameters.Password,
-            // 必要なら:
-            // SslMode = MySqlSslMode.Required,
-            // AllowUserVariables = true,
-        };
-        //ConnctionStringは、MySQLの接続の戻り値を返すUsingクラスのメソッド
-        return conn.ConnectionString;
+        var host = cfg["Db:Host"] ?? "localhost";
+        var port = cfg["Db:Port"] ?? "3306";
+        var db = cfg["Db:Database"] ?? "term_app";
+        var user = cfg["Db:User"] ?? "termapp_user";
+
+        // 優先順: user-secrets の Db:Password → 環境変数 DB_PASSWORD
+        var pass = cfg["Db:Password"] ?? cfg["DB_PASSWORD"];
+
+        if (string.IsNullOrWhiteSpace(pass))
+            throw new InvalidOperationException("DBパスワードが未設定です（user-secrets か DB_PASSWORD を設定）。");
+
+        return $"Server={host};Port={port};Database={db};User Id={user};Password={pass};SslMode=None;";
     }
 }

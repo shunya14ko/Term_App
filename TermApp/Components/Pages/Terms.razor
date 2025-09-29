@@ -1,4 +1,4 @@
-﻿@page "/"
+﻿@page "/term"
 @using Microsoft.AspNetCore.Components.QuickGrid
 @using TermApp.Models
 @using TermApp.Service.Repository
@@ -9,7 +9,7 @@
 
 <PageTitle>保存用語一覧</PageTitle>
 
-<h1 class="mb-3">■IT用語辞典■</h1>
+<h1 class="mb-3">■IT用語辞典</h1>
 
 @if (!string.IsNullOrEmpty(_pageError))
 {
@@ -25,30 +25,29 @@ else
     @* AsQueryable()：ここの処理はLinqを発行している *@
     <QuickGrid TGridItem="Term"
                Items="_items.AsQueryable()"
-               class="table table-striped table-bordered my-grid"
+               class="table table-hover table-striped table-bordered align-middle my-grid"
                Pagination="@_paginationState">
-
 
         <PropertyColumn Title="No" Property="@(p => p.Id)" Sortable="true" />
         <PropertyColumn Title="名称" Property="@(p => p.Name)" Sortable="true" />
         <PropertyColumn Title="作成日" Property="@(p => p.CreatedAt)" Sortable="true" Format="yyyy-MM-dd" />
 
         <TemplateColumn Title="詳細" Context="term">
-            <div class="text-center">
-                <NavLink class="btn btn-sm btn-secondary" href="@($"/detailform/{term.Id}")">詳細</NavLink>
+            <div class="d-flex justify-content-center">
+                <NavLink class="btn btn-sm btn-secondary minw-64" href="@($"/detailform/{term.Id}")">詳細</NavLink>
             </div>
         </TemplateColumn>
 
         <TemplateColumn Title="編集" Context="term">
-            <div class="text-center">
-                <NavLink class="btn btn-sm btn-primary" href="@($"/terms/edit/{term.Id}")">編集</NavLink>
+            <div class="d-flex justify-content-center">
+                <NavLink class="btn btn-sm btn-primary minw-64" href="@($"/terms/edit/{term.Id}")">編集</NavLink>
             </div>
         </TemplateColumn>
 
         <TemplateColumn Title="削除" Context="term">
-            <div class="text-center">
+            <div class="d-flex justify-content-center">
                 <button type="button"
-                        class="btn btn-sm btn-danger"
+                        class="btn btn-sm btn-danger minw-64"
                         @onclick="@(() => DeleteAsync(term.Id))">
                     削除
                 </button>
@@ -76,7 +75,6 @@ else
     // QuickGrid のページング設定
     private readonly PaginationState _paginationState = new() { ItemsPerPage = 20 };
 
-
     private async Task DeleteAsync(long id)
     {
         try
@@ -103,7 +101,6 @@ else
         }
         catch (Exception ex)
         {
-            // （ILogger 推奨）これを実装する
             _pageError = "データの取得に失敗しました。時間をおいて再度お試しください。";
             Console.WriteLine(ex);
         }
@@ -122,3 +119,68 @@ else
     // ▼ 新規作成ページへ遷移
     private void GoNew() => Nav.NavigateTo("/terms/new");
 }
+
+<style>
+    /* ===== QuickGrid の見た目だけ調整（構成はそのまま） ===== */
+    .my-grid {
+        font-size: .95rem;
+    }
+
+        /* ヘッダー固定＆視認性 */
+        .my-grid thead th {
+            position: sticky;
+            top: 0;
+            z-index: 2;
+            background: var(--bs-body-bg);
+        }
+
+        /* 縦中央（align-middleの補強） */
+        .my-grid th, .my-grid td {
+            vertical-align: middle;
+        }
+
+        /* 列幅：名称を広く、操作列は揃える */
+        .my-grid thead th:nth-child(1) {
+            width: 90px;
+            text-align: center;
+        }
+        /* No */
+        .my-grid thead th:nth-child(2) {
+            width: 40%;
+        }
+        /* 名称 */
+        .my-grid thead th:nth-child(3) {
+            width: 160px;
+            text-align: center;
+        }
+        /* 作成日 */
+        .my-grid thead th:nth-child(4),
+        .my-grid thead th:nth-child(5),
+        .my-grid thead th:nth-child(6) {
+            width: 120px;
+            text-align: center;
+        }
+    /* 詳細/編集/削除 */
+
+    /* ボタンの最小幅を一定に */
+    .minw-64 {
+        min-width: 64px;
+    }
+
+    /* 行ホバーは table-hover に任せるが、少しだけ強調 */
+    .my-grid tbody tr:hover {
+        background-color: var(--bs-table-hover-bg);
+    }
+
+    /* ページャを右寄せ */
+    .mt-2 {
+        display: flex;
+        justify-content: flex-end;
+    }
+
+    body:has(.welcome-wall) {
+        margin: 0;
+        overflow: hidden; /* body自体でもスクロール禁止 */
+    }
+
+</style>

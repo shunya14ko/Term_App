@@ -11,47 +11,72 @@
 
 <PageTitle>用語作成</PageTitle>
 
-<h1 class="mb-3">■用語追加■</h1>
+<!-- ★ フルブリード用：高さ100%で受ける -->
+<div class="fullpage-form d-flex flex-column h-100">
+    <div class="mx-auto form-max w-100">
+        <div class="d-flex justify-content-between align-items-end mb-3">
+            <h1 class="h3 mb-0">■用語追加</h1>
+            <NavLink class="btn btn-outline-secondary" href="/">一覧へ戻る</NavLink>
+        </div>
 
-@if (!string.IsNullOrEmpty(_pageError))
-{
-    <div class="alert alert-danger">@_pageError</div>
-}
+        @if (!string.IsNullOrEmpty(_pageError))
+        {
+            <div class="alert alert-danger">@_pageError</div>
+        }
 
-<EditForm Model="_form" OnValidSubmit="SaveAsync" FormName="NewTermForm">
-    <DataAnnotationsValidator />
-    <ValidationSummary />
+        <!-- ★ 残り高さいっぱい使う -->
+        <div class="card shadow-sm flex-grow-1">
+            <div class="card-body d-flex flex-column overflow-hidden">
+                <EditForm Model="_form" OnValidSubmit="SaveAsync" FormName="NewTermForm" class="d-flex flex-column flex-grow-1">
+                    <DataAnnotationsValidator />
 
-    <div class="mb-3">
-        <label class="form-label">名前（必須）</label>
-        <InputText class="form-control" @bind-Value="_form.Name" />
-        <ValidationMessage For="@(() => _form.Name)" />
+                    <ValidationSummary class="alert alert-warning" />
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">名前（必須）</label>
+                        <InputText class="form-control form-control-lg" placeholder="例）トランザクション"
+                                   @bind-Value="_form.Name" />
+                        <div class="form-text">用語の正式名称を入力してください（100文字まで）。</div>
+                        <ValidationMessage For="@(() => _form.Name)" />
+                    </div>
+
+                    <!-- ★ 説明は可変領域：flexで伸縮、ページはスクロールしない -->
+                    <div class="mb-3 d-flex flex-column flex-grow-1 min-h-0">
+                        <label class="form-label fw-semibold">説明</label>
+                        <InputTextArea class="form-control form-control-lg note-area flex-grow-1 min-h-0"
+                                       placeholder="用語の説明やメモを自由に記入"
+                                       @bind-Value="_form.Note" />
+                        <div class="form-text">改行や長文OK（最大2000文字）。</div>
+                        <ValidationMessage For="@(() => _form.Note)" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">グループ</label>
+                        <InputSelect class="form-select form-select-lg" TValue="long?" @bind-Value="_form.GroupId">
+                            <option value="">（未選択）</option>
+                            @foreach (var g in _groups)
+                            {
+                                <option value="@g.Id">@g.Name</option>
+                            }
+                        </InputSelect>
+                        <div class="form-text">任意。分類したい場合に選択してください。</div>
+                        <ValidationMessage For="@(() => _form.GroupId)" />
+                    </div>
+
+                    <!-- ★ ボタンは下に固定される感じで -->
+                    <div class="mt-auto d-flex gap-2 pt-2">
+                        <button class="btn btn-primary btn-lg px-4" type="submit" disabled="@_saving">
+                            @(_saving ? "保存中…" : "保存")
+                        </button>
+                        <NavLink class="btn btn-outline-secondary btn-lg" href="/">キャンセル</NavLink>
+                    </div>
+                </EditForm>
+            </div>
+        </div>
     </div>
-
-    <div class="mb-3">
-        <label class="form-label">説明</label>
-        <InputTextArea class="form-control" rows="22" @bind-Value="_form.Note" />
-    </div>
-
-    <div class="mb-3">
-        <label class="form-label">グループ</label>
-        <InputSelect class="form-select" TValue="long?" @bind-Value="_form.GroupId">
-            <option value="">（未選択）</option>
-            @foreach (var g in _groups)
-            {
-                <option value="@g.Id">@g.Name</option>
-            }
-        </InputSelect>
-    </div>
-
-    <div class="d-flex gap-2">
-        <button class="btn btn-primary" type="submit" disabled="@_saving">保存</button>
-        <NavLink class="btn btn-secondary" href="/">キャンセル</NavLink>
-    </div>
-</EditForm>
+</div>
 
 @code {
-    // 画面用フォームモデル（エンティティTermと衝突しない名前にする）
     private sealed class TermFormModel
     {
         [Required(ErrorMessage = "名称は必須です。")]
@@ -61,7 +86,6 @@
         [StringLength(2000)]
         public string? Note { get; set; }
 
-        // 未選択OKにするため nullable
         public long? GroupId { get; set; }
     }
 
@@ -91,28 +115,25 @@
 
         try
         {
-            // 1) Term を作成・保存（エンティティは完全修飾名で明示）
             var term = new TermApp.Models.Term
             {
-                Name      = _form.Name.Trim(),
-                GroupId   = _form.GroupId,
+                Name = _form.Name.Trim(),
+                GroupId = _form.GroupId,
                 CreatedAt = DateTime.UtcNow
             };
             await TermRepo.AddAsync(term);
 
-            // 2) 説明があれば Note テーブルへ
             if (!string.IsNullOrWhiteSpace(_form.Note))
             {
                 var note = new Note
                 {
-                    TermId    = term.Id,
-                    Content   = _form.Note.Trim(),
+                    TermId = term.Id,
+                    Content = _form.Note.Trim(),
                     UpdatedAt = DateTime.UtcNow
                 };
                 await NoteRepo.AddAsync(note);
             }
 
-            // 3) 一覧へ戻る
             Nav.NavigateTo("/");
         }
         catch (Exception ex)
@@ -126,3 +147,29 @@
         }
     }
 }
+
+<style>
+    .fullpage-form {
+        height: 100%;
+    }
+
+    .form-max {
+        max-width: 1100px;
+        padding: 24px;
+    }
+
+    .note-area {
+        min-height: 200px;
+        overflow: auto;
+        resize: vertical;
+    }
+
+    .min-h-0 {
+        min-height: 0 !important;
+    }
+
+    body:has(.welcome-wall) {
+        margin: 0;
+        overflow: hidden; /* body自体でもスクロール禁止 */
+    }
+</style>

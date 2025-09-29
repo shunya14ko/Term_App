@@ -1,49 +1,202 @@
-﻿@* @page "/terms/edit/{Id:long}"
+﻿@page "/terms/edit/{Id:long}"
+@using System.ComponentModel.DataAnnotations
+@using TermApp.Models
 @using TermApp.Service.Repository
-@inject ICrudRepository<Term> Repo
+@inject ICrudRepository<Term> TermRepo
+@inject ICrudRepository<Note> NoteRepo
+@inject ICrudRepository<Group> GroupRepo
 @inject NavigationManager Nav
+@rendermode InteractiveServer
 
-<PageTitle>編集</PageTitle>
+<PageTitle>用語編集</PageTitle>
 
-<h1 class="mb-3">IT用語辞典</h1>
+<div class="container-fluid py-4">
+    <div class="mx-auto form-max w-100">
+        <div class="d-flex justify-content-between align-items-end mb-3">
+            <h1 class="h3 mb-0">■用語編集</h1>
+            <NavLink class="btn btn-outline-secondary" href="/">一覧へ戻る</NavLink>
+        </div>
 
-@if (!string.IsNullOrEmpty(_pageError))
-{
-    <div class="alert alert-danger">@_pageError</div>
-}
+        @if (!string.IsNullOrEmpty(_pageError))
+        {
+            <div class="alert alert-danger">@_pageError</div>
+        }
 
-@if (_loading)
-{
-    <p>Loading...</p>
-}
+        @if (_loading)
+        {
+            <div class="card"><div class="card-body">読み込み中...</div></div>
+        }
+        else if (_form is null)
+        {
+            <div class="alert alert-warning">データが見つかりません。</div>
+        }
+        else
+        {
+            <div class="card shadow-sm">
+                <div class="card-body d-flex flex-column">
+                    <EditForm Model="_form" OnValidSubmit="SaveAsync" class="d-flex flex-column flex-grow-1">
+                        <DataAnnotationsValidator />
+                        <ValidationSummary class="alert alert-warning" />
 
-@code   
-    private List<Term> _items = new();
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">名称（必須）</label>
+                            <InputText class="form-control form-control-lg" @bind-Value="_form.Name" />
+                            <div class="form-text">100文字まで。</div>
+                            <ValidationMessage For="@(() => _form.Name)" />
+                        </div>
 
+                        <div class="mb-3 d-flex flex-column flex-grow-1 min-h-0">
+                            <label class="form-label fw-semibold">説明</label>
+                            <InputTextArea class="form-control form-control-lg note-area flex-grow-1 min-h-0"
+                                           @bind-Value="_form.Note" />
+                            <div class="form-text">最大2000文字。空でも保存可。</div>
+                            <ValidationMessage For="@(() => _form.Note)" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">グループ</label>
+                            <InputSelect class="form-select form-select-lg" TValue="long?" @bind-Value="_form.GroupId">
+                                <option value="">（未選択）</option>
+                                @foreach (var g in _groups)
+                                {
+                                    <option value="@g.Id">@g.Name</option>
+                                }
+                            </InputSelect>
+                            <ValidationMessage For="@(() => _form.GroupId)" />
+                        </div>
+
+                        <div class="mt-auto d-flex gap-2 pt-2">
+                            <button class="btn btn-primary btn-lg px-4" type="submit" disabled="@_saving">
+                                @(_saving ? "更新中…" : "保存")
+                            </button>
+                            <NavLink class="btn btn-outline-secondary btn-lg" href="/">キャンセル</NavLink>
+                        </div>
+                    </EditForm>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter] public long Id { get; set; }
+
+    private sealed class EditFormModel
+    {
+        [Required, StringLength(100)]
+        public string Name { get; set; } = string.Empty;
+
+        [StringLength(2000)]
+        public string? Note { get; set; }
+
+        public long? GroupId { get; set; }
+    }
+
+    private EditFormModel? _form;
+    private List<Group> _groups = new();
+    private Term? _term;
+    private Note? _note;
     private bool _loading = true;
+    private bool _saving;
     private string? _pageError;
 
-　　protected override async Task OnInitializedAsync()
+    protected override async Task OnParametersSetAsync()
     {
         _loading = true;
+        _pageError = null;
+
         try
         {
-            // ▼ Repository から取得。IEnumerable を受けたら List 化して UI へ。
-            var list = await TermRepo.GetAllAsync();
-            _items = list?.ToList() ?? new List<Term>();
+            // マスタ類
+            var grp = await GroupRepo.GetAllAsync();
+            _groups = grp?.OrderBy(g => g.Name).ToList() ?? new();
 
-            // ▼ 新しい順にしたいとき
-            // _items = _items.OrderByDescending(t => t.CreatedAt).ToList();
+            // 本体
+            _term = await TermRepo.GetByIdAsync(Id);
+            _note = await NoteRepo.GetByIdAsync(Id); // 共有主キー
+
+            if (_term is null)
+            {
+                _form = null;
+                return;
+            }
+
+            _form = new EditFormModel
+            {
+                Name = _term.Name,
+                GroupId = _term.GroupId,
+                Note = _note?.Content
+            };
         }
         catch (Exception ex)
         {
-            // ▼ UI とログの両方に通知（ILogger 推奨）
-            _pageError = "データの取得に失敗しました。時間をおいて再度お試しください。";
-            Console.WriteLine(ex);
+            _pageError = "編集データの取得に失敗しました。";
+            Console.Error.WriteLine(ex);
         }
         finally
         {
             _loading = false;
         }
     }
- *@
+
+    private async Task SaveAsync()
+    {
+        if (_form is null || _saving) return;
+        _saving = true;
+
+        try
+        {
+            // Term 更新
+            _term!.Name = _form.Name.Trim();
+            _term.GroupId = _form.GroupId;
+            await TermRepo.UpdateAsync(_term);
+
+            // Note 追加/更新
+            var content = string.IsNullOrWhiteSpace(_form.Note) ? null : _form.Note.Trim();
+
+            if (_note is null && content is not null)
+            {
+                _note = new Note { TermId = _term.Id, Content = content, UpdatedAt = DateTime.UtcNow };
+                await NoteRepo.AddAsync(_note);
+            }
+            else if (_note is not null)
+            {
+                _note.Content = content;
+                _note.UpdatedAt = DateTime.UtcNow;
+                await NoteRepo.UpdateAsync(_note);
+            }
+
+            Nav.NavigateTo("/");
+        }
+        catch (Exception ex)
+        {
+            _pageError = "保存に失敗しました。時間をおいて再度お試しください。";
+            Console.Error.WriteLine(ex);
+        }
+        finally
+        {
+            _saving = false;
+        }
+    }
+}
+
+<style>
+    .form-max {
+        max-width: 1100px;
+    }
+
+    .note-area {
+        min-height: 36vh;
+        resize: vertical;
+        overflow: auto;
+    }
+
+    .min-h-0 {
+        min-height: 0 !important;
+    }
+
+    body:has(.welcome-wall) {
+        margin: 0;
+        overflow: hidden; /* body自体でもスクロール禁止 */
+    }
+</style>

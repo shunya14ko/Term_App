@@ -18,6 +18,12 @@ public static class DbConnect
         if (string.IsNullOrWhiteSpace(pass))
             throw new InvalidOperationException("DBパスワードが未設定です（user-secrets か DB_PASSWORD を設定）。");
 
-        return $"Server={host};Port={port};Database={db};User Id={user};Password={pass};SslMode=None;";
+        return $"Server={host};" +
+               $"Port={port};" +
+               $"Database={db};" +
+               $"User Id={user};" +
+               $"Password={pass};" +
+               $"SslMode=None;" +
+               $"AllowPublicKeyRetrieval=True;";
     }
 }

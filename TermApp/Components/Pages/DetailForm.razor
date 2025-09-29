@@ -4,44 +4,63 @@
 @inject ICrudRepository<Term> TermRepo
 @inject ICrudRepository<Note> NoteRepo
 @inject NavigationManager Nav
-@inject IJSRuntime JS
 
-<h3>詳細</h3>
+<div class="container-fluid py-4">
+    @if (_loading)
+    {
+        <div>読み込み中...</div>
+    }
+    else if (!string.IsNullOrEmpty(_error))
+    {
+        <div class="alert alert-danger">@_error</div>
+    }
+    else if (_item is null)
+    {
+        <div class="alert alert-warning">データが見つかりません。</div>
+    }
+    else
+    {
+        <div class="mb-4">
+            <h3 class="mb-0">■詳細内容の確認</h3>
+        </div>
 
-@if (_loading)
-{
-    <p>Loading...</p>
-}
-else if (!string.IsNullOrEmpty(_error))
-{
-    <div class="alert alert-danger">@_error</div>
-}
-else if (_item is null)
-{
-    <div class="alert alert-warning">データが見つかりません。</div>
-}
-else
-{
-    <dl>
-        <dt>ID</dt>
-        <dd>@_item.Id</dd>
+        <div class="mb-3">
+            <label class="form-label">ID</label>
+            <input class="form-control form-control-lg" readonly value="@_item.Id" />
+        </div>
 
-        <dt>名称</dt>
-        <dd>@_item.Name</dd>
+        <div class="mb-3">
+            <label class="form-label">名称</label>
+            <input class="form-control form-control-lg" readonly value="@_item.Name" />
+        </div>
 
-        <dt>作成日</dt>
-        <dd>@_item.CreatedAt.ToString("yyyy-MM-dd HH:mm")</dd>
+        <div class="mb-3">
+            <label class="form-label">作成日</label>
+            <input class="form-control form-control-lg" readonly value="@_item.CreatedAt.ToString("yyyy-MM-dd HH:mm")" />
+        </div>
 
-        <dt>内容</dt>
-        <dd>@(_item.Note?.Content ?? _note?.Content ?? "(メモなし)")</dd>
-    </dl>
+        <div class="mb-2">
+            <label class="form-label">内容</label>
+            <textarea class="form-control form-control-lg read-only-textarea" readonly>@(_note?.Content ?? "")</textarea>
+        </div>
 
-    <NavLink class="btn btn-sm btn-primary" href="@("/")">一覧に戻る</NavLink>
-}
+        <div class="text-muted">
+            最終更新: @(_note is null ? "—" : _note.UpdatedAt.ToString("yyyy-MM-dd HH:mm"))
+        </div>
+
+        <div class="mt-4 d-flex gap-2">
+            <NavLink class="btn btn-outline-secondary" href="/Term">■一覧に戻る</NavLink>
+            <NavLink class="btn btn-primary" href="@($"/editterm/{Id}")">■用語を編集</NavLink>
+            <NavLink class="btn btn-outline-primary" href="@($"/noteform/{Id}")">
+                @(_note is null ? "■内容を追加" : "■内容を編集")
+            </NavLink>
+        </div>
+
+    }
+</div>
 
 @code {
     [Parameter] public long Id { get; set; }
-
     private Term? _item;
     private Note? _note;
     private bool _loading = true;
@@ -56,8 +75,9 @@ else
 
         try
         {
-            // Term取得（必要ならリポジトリ側で Include(Note) 対応）
             _item = await TermRepo.GetByIdAsync(Id);
+            // Note.TermId == Term.Id
+            _note = await NoteRepo.GetByIdAsync(Id);
 
             if (_item is null)
             {
@@ -65,14 +85,23 @@ else
                 return;
             }
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             _error = "詳細データを取得できませんでした。";
-            Console.Error.WriteLine(ex);
         }
         finally
         {
             _loading = false;
         }
     }
+    private void EditTerm() => Nav.NavigateTo($"/editterm/{Id}");
+    private void EditOrCreateNote() => Nav.NavigateTo($"/noteform/{Id}");
 }
+
+<style>
+.read-only-textarea {
+    min-height: 45vh;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+</style>

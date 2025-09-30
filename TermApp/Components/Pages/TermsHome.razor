@@ -7,8 +7,6 @@
 @inject IJSRuntime JS
 @rendermode InteractiveServer
 
-<PageTitle>保存用語一覧</PageTitle>
-
 <h1 class="mb-3">■IT用語辞典</h1>
 
 @if (!string.IsNullOrEmpty(_pageError))
@@ -22,7 +20,6 @@
 }
 else
 {
-    @* AsQueryable()：ここの処理はLinqを発行している *@
     <QuickGrid TGridItem="Term"
                Items="_items.AsQueryable()"
                class="table table-hover table-striped table-bordered align-middle my-grid"
@@ -53,9 +50,7 @@ else
                 </button>
             </div>
         </TemplateColumn>
-
     </QuickGrid>
-
     <div class="mt-2">
         <Paginator State="@_paginationState" />
     </div>
@@ -75,13 +70,14 @@ else
     // QuickGrid のページング設定
     private readonly PaginationState _paginationState = new() { ItemsPerPage = 20 };
 
+    // 削除ボタンのイベント
     private async Task DeleteAsync(long id)
     {
         try
         {
             await TermRepo.DeleteAsync(id);
-            var idx = _items.FindIndex(t => t.Id == id);
-            if (idx >= 0) _items.RemoveAt(idx);
+            var idTerm = _items.FindIndex(t => t.Id == id);
+            if (idTerm >= 0) _items.RemoveAt(idTerm);
         }
         catch (Exception ex)
         {
@@ -110,18 +106,17 @@ else
         }
     }
 
-    // ▼ 詳細ページへ遷移
+    // 詳細ページへ遷移
     private void OpenDetail(long id) => Nav.NavigateTo($"/detailform/{id}");
 
-    // ▼ 編集ページへ遷移
+    // 編集ページへ遷移
     private void GoEdit(long id) => Nav.NavigateTo($"/terms/edit/{id}");
 
-    // ▼ 新規作成ページへ遷移
+    // 新規作成ページへ遷移
     private void GoNew() => Nav.NavigateTo("/terms/new");
 }
 
 <style>
-    /* ===== QuickGrid の見た目だけ調整（構成はそのまま） ===== */
     .my-grid {
         font-size: .95rem;
     }
@@ -139,48 +134,52 @@ else
             vertical-align: middle;
         }
 
-        /* 列幅：名称を広く、操作列は揃える */
-        .my-grid thead th:nth-child(1) {
-            width: 90px;
+        /* No  */
+        .my-grid :is(thead th, tbody td):nth-child(1) {
+            width: 100px;
             text-align: center;
+            white-space: nowrap;
         }
-        /* No */
-        .my-grid thead th:nth-child(2) {
-            width: 40%;
-        }
-        /* 名称 */
-        .my-grid thead th:nth-child(3) {
-            width: 160px;
-            text-align: center;
-        }
-        /* 作成日 */
-        .my-grid thead th:nth-child(4),
-        .my-grid thead th:nth-child(5),
-        .my-grid thead th:nth-child(6) {
-            width: 120px;
-            text-align: center;
-        }
-    /* 詳細/編集/削除 */
 
-    /* ボタンの最小幅を一定に */
+        /* 名称 */
+        .my-grid :is(thead th, tbody td):nth-child(2) { 
+            width: 100%;
+            white-space: normal;
+        }
+
+        /* 作成日 */
+        .my-grid :is(thead th, tbody td):nth-child(3) {
+            width: 100px;
+            text-align: center;
+            white-space: nowrap;
+        }
+
+        /* 4〜6列目のセルの幅を指定（列全体） */
+        .my-grid :is(thead th, tbody td):nth-child(4),
+        .my-grid :is(thead th, tbody td):nth-child(5),
+        .my-grid :is(thead th, tbody td):nth-child(6) {
+            width: 100px;
+            text-align: center;
+            white-space: nowrap;
+        }
+
+        /* セル内のdivを中央寄せ（display:flex;） */
+        .my-grid tbody td:nth-child(4) > div,
+        .my-grid tbody td:nth-child(5) > div,
+        .my-grid tbody td:nth-child(6) > div {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+    /* ボタンの最小幅） */
     .minw-64 {
-        min-width: 64px;
+        min-width: 100px;
     }
 
-    /* 行ホバーは table-hover に任せるが、少しだけ強調 */
+    /* 行ホバーは table-hover に任せつつ少し強調 */
     .my-grid tbody tr:hover {
         background-color: var(--bs-table-hover-bg);
-    }
-
-    /* ページャを右寄せ */
-    .mt-2 {
-        display: flex;
-        justify-content: flex-end;
-    }
-
-    body:has(.welcome-wall) {
-        margin: 0;
-        overflow: hidden; /* body自体でもスクロール禁止 */
     }
 
 </style>

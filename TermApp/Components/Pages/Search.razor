@@ -1,0 +1,161 @@
+﻿@page "/terms/search"
+@using System.Linq
+@using TermApp.Models
+@using TermApp.Service.Repository
+@using Microsoft.AspNetCore.Components.QuickGrid
+@using Microsoft.AspNetCore.Components.Forms
+@inject ICrudRepository<Term> TermRepo
+@inject NavigationManager Nav
+@rendermode InteractiveServer
+
+<h1 class="mb-3">■用語検索</h1>
+
+@if (!string.IsNullOrEmpty(_pageError))
+{
+    <div class="alert alert-danger">@_pageError</div>
+}
+
+<!-- 検索フォーム -->
+<div class="card shadow-sm mb-3">
+    <div class="card-body">
+        <div class="row g-3 align-items-end">
+
+            <!-- キーワード -->
+            <div class="col-12 col-md-5">
+                <label class="form-label">キーワード</label>
+                <input class="form-control"
+                       placeholder="名称で部分一致検索"
+                       @bind-value="_keyword"
+                       @bind-value:event="oninput"
+                       @bind-value:after="ApplyFilter" />
+            </div>
+
+            <!-- 作成日（範囲） -->
+            <div class="col-6 col-md-2">
+                <label class="form-label">作成日～</label>
+                <InputDate @bind-Value="_fromDate"
+                           @bind-Value:after="ApplyFilter"
+                           class="form-control" />
+            </div>
+
+            <div class="col-6 col-md-2">
+                <label class="form-label">～作成日</label>
+                <InputDate @bind-Value="_toDate"
+                           @bind-Value:after="ApplyFilter"
+                           class="form-control" />
+            </div>
+
+            <!-- ボタン -->
+            <div class="col-12 d-flex gap-2">
+                <button class="btn btn-primary" @onclick="ApplyFilter">
+                    <i class="bi bi-search"></i> 検索
+                </button>
+                <button class="btn btn-outline-secondary" @onclick="ClearFilter">
+                    クリア
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 結果表示 -->
+@if (_loading)
+{
+    <p>Loading...</p>
+}
+else
+{
+    <QuickGrid TGridItem="Term"
+               Items="_filtered.AsQueryable()"
+               class="table table-hover table-striped table-bordered align-middle my-grid"
+               Pagination="@_paginationState">
+
+        <PropertyColumn Title="No" Property="@(p => p.Id)" Sortable="true" />
+        <PropertyColumn Title="名称" Property="@(p => p.Name)" Sortable="true" />
+
+        <TemplateColumn Title="作成日" Context="term">
+            @term.CreatedAt.ToString("yyyy-MM-dd")
+        </TemplateColumn>
+
+        <TemplateColumn Title="詳細" Context="term">
+            <div class="text-center" style="width:88px;">
+                <NavLink class="btn btn-sm btn-secondary"
+                         href="@($"/detailform/{term.Id}")">詳細</NavLink>
+            </div>
+        </TemplateColumn>
+    </QuickGrid>
+
+
+    <!-- ページャ -->
+    <div class="mt-2 d-flex justify-content-between">
+        <div class="text-muted small">
+            @_filtered.Count 件
+        </div>
+        <Paginator State="@_paginationState" />
+    </div>
+}
+
+@code {
+    private string? _pageError;
+    private string _keyword = string.Empty;
+    private DateTime? _fromDate;
+    private DateTime? _toDate;
+
+    private List<Term> _items = new();
+    private List<Term> _filtered = new();
+    private bool _loading = true;
+
+    private PaginationState _paginationState = new() { ItemsPerPage = 10 };
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            _loading = true;
+            // IEnumerableでもListでもOKにするため ToList()
+            _items = (await TermRepo.GetAllAsync()).ToList();
+            ApplyFilter();
+        }
+        catch (Exception ex)
+        {
+            _pageError = ex.Message;
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private void ApplyFilter()
+    {
+        IEnumerable<Term> q = _items;
+
+        if (!string.IsNullOrWhiteSpace(_keyword))
+            q = q.Where(t => (t.Name ?? string.Empty)
+                .Contains(_keyword, StringComparison.OrdinalIgnoreCase));
+
+        if (_fromDate.HasValue)
+            q = q.Where(t => t.CreatedAt.Date >= _fromDate.Value.Date);
+
+        if (_toDate.HasValue)
+            q = q.Where(t => t.CreatedAt.Date <= _toDate.Value.Date);
+
+        _filtered = q.OrderByDescending(t => t.Id).ToList();
+        StateHasChanged();
+    }
+
+    private void ClearFilter()
+    {
+        _keyword = string.Empty;
+        _fromDate = null;
+        _toDate = null;
+        ApplyFilter();
+    }
+
+    private async Task DeleteAsync(long id)
+    {
+        await TermRepo.DeleteAsync(id);
+        _items = (await TermRepo.GetAllAsync()).ToList();
+        ApplyFilter();
+    }
+}

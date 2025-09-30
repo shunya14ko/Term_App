@@ -21,7 +21,7 @@
     else
     {
         <div class="mb-4">
-            <h3 class="mb-0">■詳細内容の確認</h3>
+            <h1 class="mb-0">■詳細内容の確認</h1>
         </div>
 
         <div class="mb-3">
@@ -41,7 +41,7 @@
 
         <div class="mb-2">
             <label class="form-label">内容</label>
-            <textarea class="form-control form-control-lg read-only-textarea" readonly>@(_note?.Content ?? "")</textarea>
+            <textarea class="form-control form-control-lg textarea-formatt" readonly>@(_note?.Content ?? "")</textarea>
         </div>
 
         <div class="text-muted">
@@ -50,10 +50,6 @@
 
         <div class="mt-4 d-flex gap-2">
             <NavLink class="btn btn-outline-secondary" href="/Term">■一覧に戻る</NavLink>
-            <NavLink class="btn btn-primary" href="@($"/editterm/{Id}")">■用語を編集</NavLink>
-            <NavLink class="btn btn-outline-primary" href="@($"/noteform/{Id}")">
-                @(_note is null ? "■内容を追加" : "■内容を編集")
-            </NavLink>
         </div>
 
     }
@@ -76,7 +72,6 @@
         try
         {
             _item = await TermRepo.GetByIdAsync(Id);
-            // Note.TermId == Term.Id
             _note = await NoteRepo.GetByIdAsync(Id);
 
             if (_item is null)
@@ -94,14 +89,4 @@
             _loading = false;
         }
     }
-    private void EditTerm() => Nav.NavigateTo($"/editterm/{Id}");
-    private void EditOrCreateNote() => Nav.NavigateTo($"/noteform/{Id}");
 }
-
-<style>
-.read-only-textarea {
-    min-height: 45vh;
-    white-space: pre-wrap;
-    word-break: break-word;
-}
-</style>

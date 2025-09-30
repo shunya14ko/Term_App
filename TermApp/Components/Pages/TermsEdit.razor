@@ -8,13 +8,10 @@
 @inject NavigationManager Nav
 @rendermode InteractiveServer
 
-<PageTitle>用語編集</PageTitle>
-
 <div class="container-fluid py-4">
     <div class="mx-auto form-max w-100">
         <div class="d-flex justify-content-between align-items-end mb-3">
             <h1 class="h3 mb-0">■用語編集</h1>
-            <NavLink class="btn btn-outline-secondary" href="/">一覧へ戻る</NavLink>
         </div>
 
         @if (!string.IsNullOrEmpty(_pageError))
@@ -45,9 +42,9 @@
                             <ValidationMessage For="@(() => _form.Name)" />
                         </div>
 
-                        <div class="mb-3 d-flex flex-column flex-grow-1 min-h-0">
+                        <div class="mb-3 d-flex flex-column flex-grow-1 min-h-0 w-100">
                             <label class="form-label fw-semibold">説明</label>
-                            <InputTextArea class="form-control form-control-lg note-area flex-grow-1 min-h-0"
+                            <InputTextArea class="form-control form-control-lg textarea-formatt"
                                            @bind-Value="_form.Note" />
                             <div class="form-text">最大2000文字。空でも保存可。</div>
                             <ValidationMessage For="@(() => _form.Note)" />
@@ -69,7 +66,7 @@
                             <button class="btn btn-primary btn-lg px-4" type="submit" disabled="@_saving">
                                 @(_saving ? "更新中…" : "保存")
                             </button>
-                            <NavLink class="btn btn-outline-secondary btn-lg" href="/">キャンセル</NavLink>
+                            <NavLink class="btn btn-outline-secondary btn-lg" href="/term">キャンセル</NavLink>
                         </div>
                     </EditForm>
                 </div>
@@ -107,13 +104,11 @@
 
         try
         {
-            // マスタ類
             var grp = await GroupRepo.GetAllAsync();
             _groups = grp?.OrderBy(g => g.Name).ToList() ?? new();
 
-            // 本体
             _term = await TermRepo.GetByIdAsync(Id);
-            _note = await NoteRepo.GetByIdAsync(Id); // 共有主キー
+            _note = await NoteRepo.GetByIdAsync(Id);
 
             if (_term is null)
             {
@@ -166,7 +161,7 @@
                 await NoteRepo.UpdateAsync(_note);
             }
 
-            Nav.NavigateTo("/");
+            Nav.NavigateTo("/term");
         }
         catch (Exception ex)
         {
@@ -186,9 +181,10 @@
     }
 
     .note-area {
-        min-height: 36vh;
+        min-height: 45vh;
         resize: vertical;
         overflow: auto;
+        width: 100%;
     }
 
     .min-h-0 {
@@ -199,4 +195,5 @@
         margin: 0;
         overflow: hidden; /* body自体でもスクロール禁止 */
     }
+
 </style>

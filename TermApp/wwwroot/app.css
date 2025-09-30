@@ -1,4 +1,4 @@
-html, body {
+﻿html, body {
     font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
 }
 
@@ -57,4 +57,11 @@ h1:focus {
 
 .form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
     text-align: start;
+}
+
+.textarea-formatt {
+    height: 30vh;
+    min-height: 300px;
+    resize: vertical; /* 必要ならユーザーが高さ変更できる */
+    line-height: 1.5;
 }

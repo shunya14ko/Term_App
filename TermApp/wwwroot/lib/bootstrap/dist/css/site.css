@@ -1,0 +1,12 @@
+﻿.my-grid th,
+.my-grid td {
+    text-align: center !important;
+    vertical-align: middle;
+}
+
+    .my-grid th > button {
+        display: inline-block;
+        margin: 0 auto;
+        text-align: center;
+        padding: 0;
+    }

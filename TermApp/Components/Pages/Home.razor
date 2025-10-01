@@ -1,7 +1,94 @@
 ﻿@page "/"
+@rendermode InteractiveServer
 
-<PageTitle>Home</PageTitle>
+<div class="welcome-wall">
+    <div class="welcome-inner">
+        <h1 class="welcome-title">Welcome to TermApp</h1>
+        <p class="welcome-sub">単語帳を、あなたのすぐそばに・・・</p>
+    </div>
 
-<h1>Hello, world!</h1>
+    <!-- ほのかな装飾（光の粒） -->
+    <div class="orb orb-a"></div>
+    <div class="orb orb-b"></div>
+    <div class="orb orb-c"></div>
+</div>
 
-Welcome to your new app.
+<style>
+    /* ---- 画面いっぱいの“壁紙” ---- */
+    .welcome-wall {
+        position: relative;
+        height: 100vh;
+        overflow: hidden;
+        display: grid;
+        place-items: center;
+        margin: 0;
+        padding: 0;
+        color: #fff;
+        background: linear-gradient(120deg,#161a2b, #0d2b52 45%, #0f5f6a 70%, #1e9e83);
+        background-size: 200% 200%;
+        animation: gradientMove 14s ease-in-out infinite alternate;
+        overflow: hidden;
+    }
+
+    /* 中央メッセージ */
+    .welcome-inner {
+        text-align: center;
+        padding: 2rem 1.5rem;
+        backdrop-filter: blur(2px);
+    }
+
+    .welcome-title {
+        font-size: clamp(2rem, 5vw, 3.5rem);
+        letter-spacing: .02em;
+        font-weight: 800;
+        margin: 0 0 .5rem;
+    }
+
+    .welcome-sub {
+        font-size: clamp(1rem, 2.2vw, 1.25rem);
+        opacity: .85;
+        margin: 0;
+    }
+
+    /* ほのかな光の粒（アクセント） */
+    .orb {
+        position: absolute;
+        filter: blur(40px);
+        opacity: .35;
+        pointer-events: none;
+        mix-blend-mode: screen;
+    }
+
+    .orb-a {
+        width: 36vmin;
+        height: 36vmin;
+        background: #8a5cff;
+        top: 10%;
+        left: 8%;
+    }
+
+    .orb-b {
+        width: 40vmin;
+        height: 40vmin;
+        background: #2bd4ff;
+        bottom: 12%;
+        right: 10%;
+    }
+
+    .orb-c {
+        width: 28vmin;
+        height: 28vmin;
+        background: #67ffbf;
+        top: 55%;
+        left: 22%;
+    }
+
+    :root {
+        color-scheme: light dark;
+    }
+
+    body:has(.welcome-wall) {
+        margin: 0;
+        overflow: hidden;
+    }
+</style>

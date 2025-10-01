@@ -1,7 +1,89 @@
-﻿@page "/"
+@page "/"
+@inject MySqlService Database
+@inject NavigationManager NavigationManager
 
-<PageTitle>Home</PageTitle>
+<PageTitle>ダッシュボード</PageTitle>
 
-<h1>Hello, world!</h1>
+<h1 class="mb-4">ダッシュボード</h1>
 
-Welcome to your new app.
+@if (!string.IsNullOrWhiteSpace(_errorMessage))
+{
+    <div class="alert alert-warning" role="alert">
+        @_errorMessage
+    </div>
+}
+else if (_isLoading)
+{
+    <div class="text-muted">読み込み中です…</div>
+}
+else if (_summary is not null)
+{
+    <div class="row g-4">
+        <div class="col-md-4">
+            <div class="summary-card">
+                <h2>登録済み用語</h2>
+                <p class="summary-value">@_summary.TotalTerms.ToString("N0")</p>
+                <p class="summary-caption">最新更新日: @(FormatLastUpdated(_summary.LastUpdated))</p>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="summary-card @(_summary.OutstandingTerms > 0 ? "summary-card--alert" : string.Empty)">
+                <h2>残債</h2>
+                <p class="summary-value">@_summary.OutstandingTerms.ToString("N0")</p>
+                <p class="summary-caption">定義が未入力の用語数</p>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="summary-card">
+                <h2>未配属の用語</h2>
+                <p class="summary-value">@_summary.TermsWithoutGroup.ToString("N0")</p>
+                <p class="summary-caption">グループ未割り当て</p>
+            </div>
+        </div>
+    </div>
+
+    <section class="mt-5">
+        <div class="d-flex flex-wrap gap-3 align-items-center justify-content-between">
+            <h2 class="section-title">次のアクション</h2>
+            <div class="d-flex gap-2">
+                <button class="btn btn-primary" @onclick="NavigateToGroupCreation">グループを作成</button>
+                <a class="btn btn-outline-secondary" href="terms">用語を確認</a>
+            </div>
+        </div>
+        <p class="text-muted">残債がある場合は意味を追記し、未配属の用語は適切なグループへ割り当ててください。</p>
+    </section>
+}
+else
+{
+    <p class="text-muted">データが見つかりませんでした。</p>
+}
+
+@code {
+    private MySqlService.TermSummary? _summary;
+    private bool _isLoading = true;
+    private string? _errorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            _summary = await Database.GetDashboardSummaryAsync();
+        }
+        catch (MySqlService.DataAccessException ex)
+        {
+            _errorMessage = ex.Message;
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private static string FormatLastUpdated(DateTime? value)
+        => value is null ? "---" : value.Value.ToLocalTime().ToString("yyyy/MM/dd HH:mm");
+
+    private void NavigateToGroupCreation()
+    {
+        NavigationManager.NavigateTo("groups/create");
+    }
+}

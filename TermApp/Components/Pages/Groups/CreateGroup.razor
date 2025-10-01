@@ -1,0 +1,177 @@
+@page "/groups/create"
+@inject MySqlService Database
+
+<PageTitle>グループ作成</PageTitle>
+
+<h1 class="mb-4">グループ作成</h1>
+
+@if (!string.IsNullOrWhiteSpace(_errorMessage))
+{
+    <div class="alert alert-danger" role="alert">
+        @_errorMessage
+    </div>
+}
+
+@if (!string.IsNullOrWhiteSpace(_successMessage))
+{
+    <div class="alert alert-success" role="status">
+        @_successMessage
+    </div>
+}
+
+<EditForm Model="_input" OnValidSubmit="HandleValidSubmit">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <div class="mb-3">
+        <label class="form-label" for="group-name">グループ名</label>
+        <InputText id="group-name" class="form-control" @bind-Value="_input.Name" />
+        <ValidationMessage For="() => _input.Name" />
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label" for="group-description">説明 (任意)</label>
+        <InputTextArea id="group-description" class="form-control" rows="3" @bind-Value="_input.Description" />
+        <ValidationMessage For="() => _input.Description" />
+    </div>
+
+    <div class="mb-4">
+        <label class="form-label" for="parent-group">親グループ (任意)</label>
+        <InputSelect id="parent-group" class="form-select" @bind-Value="_input.ParentGroupId">
+            <option value="">(なし)</option>
+            @foreach (var group in _parentGroups)
+            {
+                <option value="@group.Id">@group.Name</option>
+            }
+        </InputSelect>
+    </div>
+
+    <button class="btn btn-primary" type="submit" disabled="@_isSaving">
+        @_submitButtonText
+    </button>
+</EditForm>
+
+<section class="mt-5">
+    <h2 class="section-title">登録済みグループ</h2>
+
+    @if (_isLoading)
+    {
+        <p class="text-muted">読み込み中です…</p>
+    }
+    else if (!string.IsNullOrWhiteSpace(_errorMessage))
+    {
+        <p class="text-muted">グループ情報を取得できませんでした。</p>
+    }
+    else if (_groups.Count == 0)
+    {
+        <p class="text-muted">まだグループが登録されていません。</p>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-striped align-middle">
+                <thead>
+                    <tr>
+                        <th scope="col">グループ名</th>
+                        <th scope="col">親グループ</th>
+                        <th scope="col" class="text-center">サブグループ</th>
+                        <th scope="col" class="text-center">登録用語</th>
+                        <th scope="col">作成日</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var group in _groups)
+                    {
+                        <tr>
+                            <td>
+                                <div class="fw-semibold">@group.Name</div>
+                                @if (!string.IsNullOrWhiteSpace(group.Description))
+                                {
+                                    <div class="text-muted small">@group.Description</div>
+                                }
+                            </td>
+                            <td>@(group.ParentGroupName ?? "-")</td>
+                            <td class="text-center">@group.SubGroupCount</td>
+                            <td class="text-center">@group.TermCount</td>
+                            <td>@group.CreatedAt.ToLocalTime().ToString("yyyy/MM/dd")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</section>
+
+@code {
+    private readonly MySqlService.GroupInput _input = new();
+    private readonly List<MySqlService.GroupOption> _parentGroups = new();
+    private readonly List<MySqlService.GroupSummary> _groups = new();
+
+    private bool _isLoading = true;
+    private bool _isSaving;
+    private string? _errorMessage;
+    private string? _successMessage;
+
+    private string _submitButtonText => _isSaving ? "保存中…" : "グループを登録";
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        _isLoading = true;
+        _errorMessage = null;
+
+        try
+        {
+            var parentGroups = await Database.GetParentGroupOptionsAsync();
+            _parentGroups.Clear();
+            _parentGroups.AddRange(parentGroups);
+
+            var summaries = await Database.GetGroupSummariesAsync();
+            _groups.Clear();
+            _groups.AddRange(summaries);
+        }
+        catch (MySqlService.DataAccessException ex)
+        {
+            _errorMessage = ex.Message;
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private async Task HandleValidSubmit()
+    {
+        if (_isSaving)
+        {
+            return;
+        }
+
+        _isSaving = true;
+        _errorMessage = null;
+        _successMessage = null;
+
+        try
+        {
+            await Database.CreateGroupAsync(_input);
+            _successMessage = "グループを登録しました。";
+            _input.Name = string.Empty;
+            _input.Description = null;
+            _input.ParentGroupId = null;
+
+            await LoadAsync();
+        }
+        catch (MySqlService.DataAccessException ex)
+        {
+            _errorMessage = ex.Message;
+        }
+        finally
+        {
+            _isSaving = false;
+        }
+    }
+}

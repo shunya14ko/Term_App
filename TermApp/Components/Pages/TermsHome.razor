@@ -1,0 +1,185 @@
+﻿@page "/term"
+@using Microsoft.AspNetCore.Components.QuickGrid
+@using TermApp.Models
+@using TermApp.Service.Repository
+@inject ICrudRepository<Term> TermRepo
+@inject NavigationManager Nav
+@inject IJSRuntime JS
+@rendermode InteractiveServer
+
+<h1 class="mb-3">■IT用語辞典</h1>
+
+@if (!string.IsNullOrEmpty(_pageError))
+{
+    <div class="alert alert-danger">@_pageError</div>
+}
+
+@if (_loading)
+{
+    <p>Loading...</p>
+}
+else
+{
+    <QuickGrid TGridItem="Term"
+               Items="_items.AsQueryable()"
+               class="table table-hover table-striped table-bordered align-middle my-grid"
+               Pagination="@_paginationState">
+
+        <PropertyColumn Title="No" Property="@(p => p.Id)" Sortable="true" />
+        <PropertyColumn Title="名称" Property="@(p => p.Name)" Sortable="true" />
+        <PropertyColumn Title="作成日" Property="@(p => p.CreatedAt)" Sortable="true" Format="yyyy-MM-dd" />
+
+        <TemplateColumn Title="詳細" Context="term">
+            <div class="d-flex justify-content-center">
+                <NavLink class="btn btn-sm btn-secondary minw-64" href="@($"/detailform/{term.Id}")">詳細</NavLink>
+            </div>
+        </TemplateColumn>
+
+        <TemplateColumn Title="編集" Context="term">
+            <div class="d-flex justify-content-center">
+                <NavLink class="btn btn-sm btn-primary minw-64" href="@($"/terms/edit/{term.Id}")">編集</NavLink>
+            </div>
+        </TemplateColumn>
+
+        <TemplateColumn Title="削除" Context="term">
+            <div class="d-flex justify-content-center">
+                <button type="button"
+                        class="btn btn-sm btn-danger minw-64"
+                        @onclick="@(() => DeleteAsync(term.Id))">
+                    削除
+                </button>
+            </div>
+        </TemplateColumn>
+    </QuickGrid>
+    <div class="mt-2">
+        <Paginator State="@_paginationState" />
+    </div>
+
+    @if (_items.Count == 0)
+    {
+        <div class="alert alert-info">データがありません。「新規作成」から追加してください。</div>
+    }
+}
+
+@code {
+    // QuickGrid に渡すソース
+    private List<Term> _items = new();
+    private bool _loading = true;
+    private string? _pageError;
+
+    // QuickGrid のページング設定
+    private readonly PaginationState _paginationState = new() { ItemsPerPage = 20 };
+
+    // 削除ボタンのイベント
+    private async Task DeleteAsync(long id)
+    {
+        try
+        {
+            await TermRepo.DeleteAsync(id);
+            var idTerm = _items.FindIndex(t => t.Id == id);
+            if (idTerm >= 0) _items.RemoveAt(idTerm);
+        }
+        catch (Exception ex)
+        {
+            _pageError = $"削除に失敗しました。{ex}";
+        }
+    }
+
+    // 用語一覧のロード
+    protected override async Task OnInitializedAsync()
+    {
+        _loading = true;
+        try
+        {
+            var list = await TermRepo.GetAllAsync();
+            _items = list?.ToList() ?? new List<Term>();
+            _items = _items.OrderByDescending(t => t.CreatedAt).ToList();
+        }
+        catch (Exception ex)
+        {
+            _pageError = "データの取得に失敗しました。時間をおいて再度お試しください。";
+            Console.WriteLine(ex);
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    // 詳細ページへ遷移
+    private void OpenDetail(long id) => Nav.NavigateTo($"/detailform/{id}");
+
+    // 編集ページへ遷移
+    private void GoEdit(long id) => Nav.NavigateTo($"/terms/edit/{id}");
+
+    // 新規作成ページへ遷移
+    private void GoNew() => Nav.NavigateTo("/terms/new");
+}
+
+<style>
+    .my-grid {
+        font-size: .95rem;
+    }
+
+        /* ヘッダー固定＆視認性 */
+        .my-grid thead th {
+            position: sticky;
+            top: 0;
+            z-index: 2;
+            background: var(--bs-body-bg);
+        }
+
+        /* 縦中央（align-middleの補強） */
+        .my-grid th, .my-grid td {
+            vertical-align: middle;
+        }
+
+        /* No  */
+        .my-grid :is(thead th, tbody td):nth-child(1) {
+            width: 100px;
+            text-align: center;
+            white-space: nowrap;
+        }
+
+        /* 名称 */
+        .my-grid :is(thead th, tbody td):nth-child(2) { 
+            width: 100%;
+            white-space: normal;
+        }
+
+        /* 作成日 */
+        .my-grid :is(thead th, tbody td):nth-child(3) {
+            width: 100px;
+            text-align: center;
+            white-space: nowrap;
+        }
+
+        /* 4〜6列目のセルの幅を指定（列全体） */
+        .my-grid :is(thead th, tbody td):nth-child(4),
+        .my-grid :is(thead th, tbody td):nth-child(5),
+        .my-grid :is(thead th, tbody td):nth-child(6) {
+            width: 100px;
+            text-align: center;
+            white-space: nowrap;
+        }
+
+        /* セル内のdivを中央寄せ（display:flex;） */
+        .my-grid tbody td:nth-child(4) > div,
+        .my-grid tbody td:nth-child(5) > div,
+        .my-grid tbody td:nth-child(6) > div {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+    /* ボタンの最小幅） */
+    .minw-64 {
+        min-width: 100px;
+    }
+
+    /* 行ホバーは table-hover に任せつつ少し強調 */
+    .my-grid tbody tr:hover {
+        background-color: var(--bs-table-hover-bg);
+    }
+
+</style>

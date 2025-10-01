@@ -1,0 +1,92 @@
+﻿@page "/detailform/{id:long}"
+@using TermApp.Service.Repository
+@using TermApp.Models
+@inject ICrudRepository<Term> TermRepo
+@inject ICrudRepository<Note> NoteRepo
+@inject NavigationManager Nav
+
+<div class="container-fluid py-4">
+    @if (_loading)
+    {
+        <div>読み込み中...</div>
+    }
+    else if (!string.IsNullOrEmpty(_error))
+    {
+        <div class="alert alert-danger">@_error</div>
+    }
+    else if (_item is null)
+    {
+        <div class="alert alert-warning">データが見つかりません。</div>
+    }
+    else
+    {
+        <div class="mb-4">
+            <h1 class="mb-0">■詳細内容の確認</h1>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">ID</label>
+            <input class="form-control form-control-lg" readonly value="@_item.Id" />
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">名称</label>
+            <input class="form-control form-control-lg" readonly value="@_item.Name" />
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">作成日</label>
+            <input class="form-control form-control-lg" readonly value="@_item.CreatedAt.ToString("yyyy-MM-dd HH:mm")" />
+        </div>
+
+        <div class="mb-2">
+            <label class="form-label">内容</label>
+            <textarea class="form-control form-control-lg textarea-formatt" readonly>@(_note?.Content ?? "")</textarea>
+        </div>
+
+        <div class="text-muted">
+            最終更新: @(_note is null ? "—" : _note.UpdatedAt.ToString("yyyy-MM-dd HH:mm"))
+        </div>
+
+        <div class="mt-4 d-flex gap-2">
+            <NavLink class="btn btn-outline-secondary" href="/Term">■一覧に戻る</NavLink>
+        </div>
+
+    }
+</div>
+
+@code {
+    [Parameter] public long Id { get; set; }
+    private Term? _item;
+    private Note? _note;
+    private bool _loading = true;
+    private string? _error;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        _loading = true;
+        _error = null;
+        _item = null;
+        _note = null;
+
+        try
+        {
+            _item = await TermRepo.GetByIdAsync(Id);
+            _note = await NoteRepo.GetByIdAsync(Id);
+
+            if (_item is null)
+            {
+                _error = "対象データが見つかりません。";
+                return;
+            }
+        }
+        catch (Exception)
+        {
+            _error = "詳細データを取得できませんでした。";
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+}

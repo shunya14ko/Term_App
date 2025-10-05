@@ -1,0 +1,116 @@
+﻿/* ========== QuickGrid共通 ========== */
+
+.my-grid { /* 表全体の文字サイズ */
+    font-size: .95rem;
+}
+
+    /* ヘッダ行をスクロールで固定 + 背景色で視認性UP */
+    .my-grid thead th {
+        position: sticky;
+        top: 0;
+        z-index: 2;
+        background: var(--bs-body-bg);
+    }
+
+    /* 行の縦中央揃え（Bootstrapの align-middle を補強） */
+    .my-grid th,
+    .my-grid td {
+        vertical-align: middle;
+    }
+
+    /* 列1（No）…固定幅 & 中央寄せ */
+    .my-grid :is(thead th, tbody td):nth-child(1) {
+        width: 100px;
+        text-align: center;
+        white-space: nowrap;
+    }
+
+    /* 列2（名称）…可能な限り広く確保 */
+    .my-grid :is(thead th, tbody td):nth-child(2) {
+        width: 100%;
+        white-space: normal;
+    }
+
+    /* 列3（作成日）…固定幅 & 中央寄せ */
+    .my-grid :is(thead th, tbody td):nth-child(3) {
+        width: 100px;
+        text-align: center;
+        white-space: nowrap;
+    }
+
+    /* 列4〜6（詳細/編集/削除）…固定幅 & 中央寄せ */
+    .my-grid :is(thead th, tbody td):nth-child(4),
+    .my-grid :is(thead th, tbody td):nth-child(5),
+    .my-grid :is(thead th, tbody td):nth-child(6) {
+        width: 100px;
+        text-align: center;
+        white-space: nowrap;
+    }
+
+    /* ====== ここから “ボタンを枠いっぱいに” タイト調整 ====== */
+
+    /* 1) セルの左右パディングをゼロに（枠にピッタリ付ける） */
+    .my-grid :is(thead th, tbody td):nth-child(4),
+    .my-grid :is(thead th, tbody td):nth-child(5),
+    .my-grid :is(thead th, tbody td):nth-child(6) {
+        padding: 0; /* ← ここ大事：セル余白をなくす */
+    }
+
+    /* 2) もしセル内に <div class="d-flex ..."> ラッパがある場合も全幅に */
+    .my-grid tbody td:nth-child(4) > div,
+    .my-grid tbody td:nth-child(5) > div,
+    .my-grid tbody td:nth-child(6) > div {
+        display: block; /* 中央寄せflexを無効にしてブロック化 */
+    }
+
+    /* 3) ボタン/リンク自体をセル幅100%にして角丸を外す（完全フィット） */
+    .my-grid td:nth-child(4) .btn,
+    .my-grid td:nth-child(5) .btn,
+    .my-grid td:nth-child(6) .btn,
+    .my-grid td:nth-child(4) a.btn,
+    .my-grid td:nth-child(5) a.btn,
+    .my-grid td:nth-child(6) a.btn {
+        display: block; /* インライン要素→ブロックに */
+        width: 100%; /* セル幅いっぱい */
+        border-radius: 0; /* 角丸を外して枠にタイトに */
+        margin: 0; /* 余白を完全に排除 */
+        padding-left: 0; /* 横パディングも削ると更にタイト */
+        padding-right: 0; /* 必要なら上下だけ残す */
+    }
+
+/* 4) 旧クラスの固定幅を無効化（使っている場合） */
+.minw-64 { /* 以前の min-width:100px を上書き */
+    min-width: 0;
+}
+
+/* 行ホバーは Bootstrap の table-hover を活かしつつ少し強調 */
+.my-grid tbody tr:hover {
+    background-color: var(--bs-table-hover-bg);
+}
+
+/* ========== ここから ページャ固定バー ========== */
+
+/* 画面下に常時固定（スクロールしても見えるフッター風バー） */
+.paginator-fixed {
+    position: fixed; /* ビューポート基準で固定配置 */
+    left: 0; /* 左端に張り付け */
+    right: 0; /* 右端に張り付け（全幅） */
+    bottom: 0; /* 画面の最下部に固定 */
+    z-index: 1030; /* 前面へ（必要なら他のfixedより高く） */
+    background: var(--bs-body-bg); /* 背景はページと同じ */
+    border-top: 1px solid /* 上境界線（仕切り） */
+    var(--bs-border-color, #dee2e6); /* Bootstrapのボーダー色 or 既定 */
+    padding: .5rem 0; /* バーの高さ（上下の内側余白） */
+}
+
+/* 中身をレイアウト幅に合わせて中央寄せ */
+.paginator-inner {
+    max-width: 1100px; /* コンテンツ幅に合わせて要調整 */
+    margin: 0 auto; /* 中央寄せ */
+    padding: 0 1rem; /* 端にくっつかないよう左右余白 */
+}
+
+/* 固定バーに隠れないようページ下に余白を確保（wrap要素に付与） */
+.page-wrap {
+    padding-bottom: 64px; /* ← バーの実高＋α。高さを変えたら更新 */
+}

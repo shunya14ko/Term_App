@@ -27,12 +27,6 @@ public class Group
     [Column("parent_id")]
     public long? ParentId { get; set; }
 
-    [ForeignKey(nameof(ParentId))]
-    public Group? Parent { get; set; }
-
-    [InverseProperty(nameof(Parent))]
-    public virtual List<Group> Subgroups { get; } = new();
-
     [InverseProperty(nameof(Term.Group))]
     public virtual List<Term> Terms { get; } = new();
 

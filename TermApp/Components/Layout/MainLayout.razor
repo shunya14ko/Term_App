@@ -3,7 +3,7 @@
 
 @code {
     // この配列に“全画面にしたいパス”を記述
-    private static readonly string[] FullBleedRoutes = ["/", "/home"];
+    private static readonly string[] FullBleedRoutes = ["/"];
     private bool IsFullBleed => FullBleedRoutes.Contains(new Uri(Nav.Uri).AbsolutePath, StringComparer.OrdinalIgnoreCase);
 }
 

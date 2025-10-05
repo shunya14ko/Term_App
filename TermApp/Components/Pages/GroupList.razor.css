@@ -1,0 +1,26 @@
+﻿/* ========== ここから ページャ固定バー ========== */
+
+/* 画面下に常時固定（スクロールしても見えるフッター風バー） */
+.paginator-fixed {
+    position: fixed; /* ビューポート基準で固定配置 */
+    left: 0; /* 左端に張り付け */
+    right: 0; /* 右端に張り付け（全幅） */
+    bottom: 0; /* 画面の最下部に固定 */
+    z-index: 1030; /* 前面へ（必要なら他のfixedより高く） */
+    background: var(--bs-body-bg); /* 背景はページと同じ */
+    border-top: 1px solid /* 上境界線（仕切り） */
+    var(--bs-border-color, #dee2e6); /* Bootstrapのボーダー色 or 既定 */
+    padding: .5rem 0; /* バーの高さ（上下の内側余白） */
+}
+
+/* 中身をレイアウト幅に合わせて中央寄せ */
+.paginator-inner {
+    max-width: 1100px; /* コンテンツ幅に合わせて要調整 */
+    margin: 0 auto; /* 中央寄せ */
+    padding: 0 1rem; /* 端にくっつかないよう左右余白 */
+}
+
+/* 固定バーに隠れないようページ下に余白を確保（wrap要素に付与） */
+.page-wrap {
+    padding-bottom: 64px; /* ← バーの実高＋α。高さを変えたら更新 */
+}

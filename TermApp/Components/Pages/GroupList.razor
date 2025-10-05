@@ -9,7 +9,11 @@
 
 <PageHeader Title="■グループ一覧">
     <Actions>
-        <NavLink class="btn btn-primary" href="/groups/new?return=/groups">新規追加</NavLink>
+        <NavLink class="btn btn-outline-primary"
+                 href="/groups/new"
+                 ActiveClass="">
+            グループ追加
+        </NavLink>
     </Actions>
 </PageHeader>
 
@@ -27,7 +31,9 @@
     {
         <QuickGrid TGridItem="Group"
                    Items="_items.AsQueryable()"
-                   class="table table-hover table-striped table-bordered align-middle my-grid">
+                   class="table table-hover table-striped table-bordered align-middle my-grid"
+                   Pagination="@_paginationState">
+            @* ← 追加 *@
             <PropertyColumn Title="No" Property="g => g.Id" Sortable="true" />
             <PropertyColumn Title="名称" Property="g => g.Name" Sortable="true" />
 
@@ -43,6 +49,12 @@
                 </button>
             </TemplateColumn>
         </QuickGrid>
+
+        <div class="mt-2 paginator-fixed">
+            <div class="paginator-inner">
+                <Paginator State="@_paginationState" />
+            </div>
+        </div>
     }
 </div>
 
@@ -52,6 +64,7 @@
     private string? _error;
 
     protected override async Task OnInitializedAsync() => await LoadAsync();
+    private PaginationState _paginationState = new() { ItemsPerPage = 10 };
 
     private async Task LoadAsync()
     {

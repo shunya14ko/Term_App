@@ -7,7 +7,15 @@
 @inject IJSRuntime JS
 @rendermode InteractiveServer
 
-<PageHeader Title="■単語一覧"></PageHeader>
+<PageHeader Title="■単語一覧">
+    <Actions>
+        <NavLink class="btn btn-outline-primary"
+                 ActiveClass=""
+                 href="/terms/new">
+            単語追加
+        </NavLink>
+    </Actions>
+</PageHeader>
 
 @if (!string.IsNullOrEmpty(_pageError))
 {
@@ -32,22 +40,22 @@ else
         <TemplateColumn Title="詳細" Context="term">
             <NavLink class="btn btn-sm btn-secondary w-100 d-block"
                      href="@($"/detailform/{term.Id}")">
-                詳細
+                詳細はこちら
             </NavLink>
         </TemplateColumn>
 
         <TemplateColumn Title="編集" Context="term">
             <NavLink class="btn btn-sm btn-primary w-100 d-block"
                      href="@($"/terms/edit/{term.Id}")">
-                編集
+                編集はこちら
             </NavLink>
         </TemplateColumn>
 
         <TemplateColumn Title="削除" Context="term">
             <button type="button"
                     class="btn btn-sm btn-danger w-100 d-block"
-                    @onclick="@(() => DeleteAsync(term.Id))">
-                削除
+                    @onclick="@(() => DeleteAsync(term))">
+                削除はこちら
             </button>
         </TemplateColumn>
     </QuickGrid>
@@ -74,17 +82,32 @@ else
     private readonly PaginationState _paginationState = new() { ItemsPerPage = 10 };
 
     // 削除ボタンのイベント
-    private async Task DeleteAsync(long id)
+    private async Task DeleteAsync(Term term)
     {
+        // 確認ダイアログ
+        var ok = await JS.InvokeAsync<bool>("confirm", $"「{term.Name}」を削除します。よろしいですか？");
+        if (!ok) return;
+
         try
         {
-            await TermRepo.DeleteAsync(id);
-            var idTerm = _items.FindIndex(t => t.Id == id);
-            if (idTerm >= 0) _items.RemoveAt(idTerm);
+            await TermRepo.DeleteAsync(term.Id);
+
+            // ローカル一覧からも除去
+            var idx = _items.FindIndex(t => t.Id == term.Id);
+            if (idx >= 0) _items.RemoveAt(idx);
+
+            // ページャーの現在ページが空になったら前のページへ寄せる
+            var maxIndex = Math.Max(0, (_items.Count - 1) / _paginationState.ItemsPerPage);
+            if (_paginationState.CurrentPageIndex > maxIndex)
+            {
+                await _paginationState.SetCurrentPageIndexAsync(maxIndex);
+            }
+            StateHasChanged();
         }
         catch (Exception ex)
         {
-            _pageError = $"削除に失敗しました。{ex}";
+            _pageError = "削除に失敗しました。時間をおいて再度お試しください。";
+            Console.WriteLine(ex);
         }
     }
 

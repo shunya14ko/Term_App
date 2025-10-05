@@ -1,0 +1,104 @@
+﻿@page "/groups/edit/{Id:long}"
+@rendermode InteractiveServer
+@using System.ComponentModel.DataAnnotations
+@using TermApp.Models
+@using TermApp.Service.Repository
+@inject ICrudRepository<Group> GroupRepo
+@inject NavigationManager Nav
+
+<PageHeader Title="■グループ編集">
+    <Actions>
+        <NavLink class="btn btn-outline-secondary" href="@(_returnUrl ?? "/groups")">一覧に戻る</NavLink>
+    </Actions>
+</PageHeader>
+
+<div class="mx-auto form-max w-100">
+    @if (!string.IsNullOrEmpty(_error))
+    {
+        <div class="alert alert-danger">@_error</div>
+    }
+
+    @if (_loading)
+    {
+        <p>Loading...</p>
+    }
+    else if (_entity is null)
+    {
+        <div class="alert alert-warning">データが見つかりません。</div>
+    }
+    else
+    {
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <EditForm Model="_form" OnValidSubmit="SaveAsync">
+                    <DataAnnotationsValidator />
+                    <ValidationSummary class="alert alert-warning" />
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">グループ名（必須）</label>
+                        <InputText class="form-control form-control-lg" @bind-Value="_form.Name" />
+                        <ValidationMessage For="@(() => _form.Name)" />
+                    </div>
+
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-primary btn-lg px-4" type="submit" disabled="@_saving">保存</button>
+                        <NavLink class="btn btn-outline-secondary btn-lg" href="@(_returnUrl ?? "/groups")">キャンセル</NavLink>
+                    </div>
+                </EditForm>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public long Id { get; set; }
+    [SupplyParameterFromQuery(Name = "return")] public string? _returnUrl { get; set; }
+
+    private sealed class GroupFormModel
+    {
+        [Required(ErrorMessage = "グループ名は必須です。")]
+        [StringLength(255)]
+        public string Name { get; set; } = string.Empty;
+    }
+
+    private Group? _entity;
+    private GroupFormModel _form = new();
+    private bool _saving;
+    private bool _loading = true;
+    private string? _error;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        _loading = true;
+        try
+        {
+            _entity = await GroupRepo.GetByIdAsync(Id);
+            if (_entity != null) _form.Name = _entity.Name;
+        }
+        catch (Exception ex)
+        {
+            _error = "詳細の取得に失敗しました。";
+            Console.WriteLine(ex);
+        }
+        finally { _loading = false; }
+    }
+
+    private async Task SaveAsync()
+    {
+        if (_entity is null || _saving) return;
+        _saving = true;
+
+        try
+        {
+            _entity.Name = _form.Name.Trim();
+            await GroupRepo.UpdateAsync(_entity);
+            Nav.NavigateTo(_returnUrl ?? "/groups");
+        }
+        catch (Exception ex)
+        {
+            _error = "更新に失敗しました。";
+            Console.WriteLine(ex);
+        }
+        finally { _saving = false; }
+    }
+}

@@ -2,57 +2,59 @@
 @rendermode InteractiveServer
 
 @using System.ComponentModel.DataAnnotations
-@using Microsoft.AspNetCore.Components
 @using TermApp.Models
 @using TermApp.Service.Repository
+@using Microsoft.AspNetCore.Components
+@using Microsoft.AspNetCore.Components.Routing
+@using Microsoft.AspNetCore.Components.Forms
+@using TermApp.Components.Common
 
 @inject ICrudRepository<Group> GroupRepo
 @inject NavigationManager Nav
 
-
 <PageHeader Title="■グループ追加">
     <Actions>
-        <NavLink class="btn btn-outline-secondary" href="/term">
-            一覧に戻る
+        <NavLink class="btn btn-outline-secondary" href="/groups">
+            グループ一覧に戻る
         </NavLink>
     </Actions>
 </PageHeader>
 
 <div class="fullpage-form d-flex flex-column h-100">
-    <div class="mx-auto form-max w-100">
+  <div class="mx-auto form-max w-100">
+    @if (!string.IsNullOrEmpty(_pageError))
+    {
+        <div class="alert alert-danger">@_pageError</div>
+    }
 
-        @if (!string.IsNullOrEmpty(_pageError))
-        {
-            <div class="alert alert-danger">@_pageError</div>
-        }
+    <div class="card shadow-sm flex-grow-1">
+      <div class="card-body d-flex flex-column overflow-hidden">
+        <EditForm Model="_form" OnValidSubmit="SaveAsync" class="d-flex flex-column flex-grow-1">
+          <DataAnnotationsValidator />
+          <ValidationSummary class="alert alert-warning" />
 
-        <div class="card shadow-sm flex-grow-1">
-            <div class="card-body d-flex flex-column overflow-hidden">
-                <EditForm Model="_form" OnValidSubmit="SaveAsync" class="d-flex flex-column flex-grow-1">
-                    <DataAnnotationsValidator />
-                    <ValidationSummary class="alert alert-warning" />
+          <div class="mb-3">
+            <label class="form-label fw-semibold">グループ名（必須）</label>
+            <InputText class="form-control form-control-lg" placeholder="例）プログラミング"
+                       @bind-Value="_form.Name" />
+            <div class="form-text">最大255文字。</div>
+            <ValidationMessage For="@(() => _form.Name)" />
+          </div>
 
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold">グループ名（必須）</label>
-                        <InputText class="form-control form-control-lg"
-                                   placeholder="例）プログラミング"
-                                   @bind-Value="_form.Name" />
-                        <div class="form-text">最大255文字。</div>
-                        <ValidationMessage For="@(() => _form.Name)" />
-                    </div>
-
-                    <div class="mt-auto d-flex gap-2 pt-2">
-                        <button class="btn btn-primary btn-lg px-4" type="submit" disabled="@_saving">
-                            @(_saving ? "保存中…" : "保存")
-                        </button>
-                    </div>
-                </EditForm>
-            </div>
-        </div>
+          <div class="mt-auto d-flex gap-2 pt-2">
+            <button class="btn btn-primary btn-lg px-4" type="submit" disabled="@_saving">
+              @(_saving ? "保存中…" : "保存")
+            </button>
+          </div>
+        </EditForm>
+      </div>
     </div>
+  </div>
 </div>
 
 @code {
+    [Parameter] public string? Title { get; set; }
+    [Parameter] public RenderFragment? Actions { get; set; }
     [SupplyParameterFromQuery(Name = "return")]
     public string? _returnUrl { get; set; }
 
@@ -74,11 +76,17 @@
 
         try
         {
-            var g = new Group { Name = _form.Name.Trim() };
-            await GroupRepo.AddAsync(g);
+            var name = _form.Name?.Trim();
+            if (string.IsNullOrEmpty(name))
+            {
+                _pageError = "グループ名を入力してください。";
+                return;
+            }
 
-            // 保存後は戻り先へ遷移
-            Nav.NavigateTo(_returnUrl ?? "/groups/new");
+            await GroupRepo.AddAsync(new Group { Name = name });
+
+            // 戻り先（クエリ指定）> 一覧(/groups) の順で遷移
+            Nav.NavigateTo(_returnUrl ?? "/groups");
         }
         catch (Exception ex)
         {
@@ -91,5 +99,3 @@
         }
     }
 }
-
-

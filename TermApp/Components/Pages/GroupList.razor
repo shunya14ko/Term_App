@@ -1,0 +1,87 @@
+﻿@page "/groups"
+@using TermApp.Models
+@using TermApp.Service.Repository
+@using Microsoft.AspNetCore.Components.QuickGrid
+@inject ICrudRepository<Group> GroupRepo
+@inject NavigationManager Nav
+@inject IJSRuntime JS
+@rendermode InteractiveServer
+
+<PageHeader Title="■グループ一覧">
+    <Actions>
+        <NavLink class="btn btn-primary" href="/groups/new?return=/groups">新規追加</NavLink>
+    </Actions>
+</PageHeader>
+
+<div class="mx-auto form-max w-100">
+    @if (!string.IsNullOrEmpty(_error))
+    {
+        <div class="alert alert-danger">@_error</div>
+    }
+
+    @if (_loading)
+    {
+        <p>Loading...</p>
+    }
+    else
+    {
+        <QuickGrid TGridItem="Group"
+                   Items="_items.AsQueryable()"
+                   class="table table-hover table-striped table-bordered align-middle my-grid">
+            <PropertyColumn Title="No" Property="g => g.Id" Sortable="true" />
+            <PropertyColumn Title="名称" Property="g => g.Name" Sortable="true" />
+
+            <TemplateColumn Title="編集" Context="g">
+                <NavLink class="btn btn-sm btn-primary w-100 d-block"
+                         href="@($"/groups/edit/{g.Id}?return=/groups")">編集</NavLink>
+            </TemplateColumn>
+
+            <TemplateColumn Title="削除" Context="g">
+                <button class="btn btn-sm btn-danger w-100 d-block"
+                        @onclick="@(() => DeleteAsync(g))">
+                    削除
+                </button>
+            </TemplateColumn>
+        </QuickGrid>
+    }
+</div>
+
+@code {
+    private List<Group> _items = new();
+    private bool _loading = true;
+    private string? _error;
+
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        _loading = true;
+        try
+        {
+            _items = (await GroupRepo.GetAllAsync()).OrderBy(g => g.Name).ToList();
+        }
+        catch (Exception ex)
+        {
+            _error = "一覧の取得に失敗しました。";
+            Console.WriteLine(ex);
+        }
+        finally { _loading = false; }
+    }
+
+    private async Task DeleteAsync(Group g)
+    {
+        var ok = await JS.InvokeAsync<bool>("confirm", $"「{g.Name}」を削除します。よろしいですか？");
+        if (!ok) return;
+
+        try
+        {
+            await GroupRepo.DeleteAsync(g.Id);
+            await LoadAsync();
+        }
+        catch (Exception ex)
+        {
+            _error = "削除に失敗しました。";
+            Console.WriteLine(ex);
+        }
+    }
+}

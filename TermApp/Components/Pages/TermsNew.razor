@@ -8,66 +8,68 @@
 @inject ICrudRepository<Note> NoteRepo
 @inject NavigationManager Nav
 
-    <PageHeader Title="■用語追加">
-        <Actions>
-            <NavLink class="btn btn-outline-secondary" href="/term">一覧に戻る</NavLink>
-        </Actions>
-    </PageHeader>
+<PageHeader Title="■用語追加">
+    <Actions>
+        <NavLink class="btn btn-outline-secondary" href="/term">
+            単語一覧に戻る
+        </NavLink>
+    </Actions>
+</PageHeader>
 
 <div class="fullpage-form d-flex flex-column h-100">
     <div class="mx-auto form-max w-100">
-    @if (!string.IsNullOrEmpty(_pageError))
-    {
-        <div class="alert alert-danger">@_pageError</div>
-    }
+        @if (!string.IsNullOrEmpty(_pageError))
+        {
+            <div class="alert alert-danger">@_pageError</div>
+        }
 
-    <div class="card shadow-sm flex-grow-1">
-        <div class="card-body d-flex flex-column overflow-hidden">
-            <EditForm Model="_form" OnValidSubmit="SaveAsync" FormName="NewTermForm" class="d-flex flex-column flex-grow-1">
-                <DataAnnotationsValidator />
+        <div class="card shadow-sm flex-grow-1">
+            <div class="card-body d-flex flex-column overflow-hidden">
+                <EditForm Model="_form" OnValidSubmit="SaveAsync" FormName="NewTermForm" class="d-flex flex-column flex-grow-1">
+                    <DataAnnotationsValidator />
 
-                <ValidationSummary class="alert alert-warning" />
+                    <ValidationSummary class="alert alert-warning" />
 
-                <div class="mb-3">
-                    <label class="form-label fw-semibold">名前（必須）</label>
-                    <InputText class="form-control form-control-lg" placeholder="例）トランザクション"
-                               @bind-Value="_form.Name" />
-                    <div class="form-text">用語の正式名称を入力してください（100文字まで）。</div>
-                    <ValidationMessage For="@(() => _form.Name)" />
-                </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">名前（必須）</label>
+                        <InputText class="form-control form-control-lg" placeholder="例）トランザクション"
+                                   @bind-Value="_form.Name" />
+                        <div class="form-text">用語の正式名称を入力してください（100文字まで）。</div>
+                        <ValidationMessage For="@(() => _form.Name)" />
+                    </div>
 
-                <div class="mb-3 d-flex flex-column flex-grow-1 min-h">
-                    <label class="form-label fw-semibold">説明</label>
-                    <InputTextArea class="form-control form-control-lg textarea-formatt"
-                                   placeholder="用語の説明やメモを自由に記入"
-                                   @bind-Value="_form.Note" />
-                    <div class="form-text">改行や長文OK（最大2000文字）。</div>
-                    <ValidationMessage For="@(() => _form.Note)" />
-                </div>
+                    <div class="mb-3 d-flex flex-column flex-grow-1 min-h">
+                        <label class="form-label fw-semibold">説明</label>
+                        <InputTextArea class="form-control form-control-lg textarea-formatt"
+                                       placeholder="用語の説明やメモを自由に記入"
+                                       @bind-Value="_form.Note" />
+                        <div class="form-text">改行や長文OK（最大2000文字）。</div>
+                        <ValidationMessage For="@(() => _form.Note)" />
+                    </div>
 
-                <div class="mb-3">
-                    <label class="form-label fw-semibold">グループ</label>
-                    <InputSelect class="form-select form-select-lg" TValue="long?" @bind-Value="_form.GroupId">
-                        <option value="">（未選択）</option>
-                        @foreach (var g in _groups)
-                        {
-                            <option value="@g.Id">@g.Name</option>
-                        }
-                    </InputSelect>
-                    <div class="form-text">任意。分類したい場合に選択してください。</div>
-                    <ValidationMessage For="@(() => _form.GroupId)" />
-                </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">グループ</label>
+                        <InputSelect class="form-select form-select-lg" TValue="long?" @bind-Value="_form.GroupId">
+                            <option value="">（未選択）</option>
+                            @foreach (var g in _groups)
+                            {
+                                <option value="@g.Id">@g.Name</option>
+                            }
+                        </InputSelect>
+                        <div class="form-text">任意。分類したい場合に選択してください。</div>
+                        <ValidationMessage For="@(() => _form.GroupId)" />
+                    </div>
 
-                <!-- ★ ボタンは下に固定される感じで -->
-                <div class="mt-auto d-flex gap-2 pt-2">
-                    <button class="btn btn-primary btn-lg px-4" type="submit" disabled="@_saving">
-                        @(_saving ? "保存中…" : "保存")
-                    </button>
-                </div>
-            </EditForm>
+                    <!-- ★ ボタンは下に固定される感じで -->
+                    <div class="mt-auto d-flex gap-2 pt-2">
+                        <button class="btn btn-primary btn-lg px-4" type="submit" disabled="@_saving">
+                            @(_saving ? "保存中…" : "保存")
+                        </button>
+                    </div>
+                </EditForm>
+            </div>
         </div>
     </div>
-</div>
 </div>
 
 @code {
@@ -130,7 +132,7 @@
                 await NoteRepo.AddAsync(note);
             }
 
-            Nav.NavigateTo("/terms/new");
+            Nav.NavigateTo("/terms");
         }
         catch (Exception ex)
         {

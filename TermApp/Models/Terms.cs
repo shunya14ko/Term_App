@@ -23,7 +23,8 @@ public class Term
     public string Name { get; set; } = string.Empty;
     public Note? Note { get; set; }
 
-    [Required, Column("created_at")]
+    [DatabaseGenerated(DatabaseGeneratedOption.Computed)]
+    [Column("created_at")]
     public DateTime CreatedAt { get; set; }
 
     [Column("group_id")]

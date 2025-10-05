@@ -24,7 +24,7 @@ public class Note
     [Column("content")]
     public string? Content { get; set; }
 
-    [Required]
+    [DatabaseGenerated(DatabaseGeneratedOption.Computed)]
     [Column("updated_at")]
     public DateTime UpdatedAt { get; set; }
 }

@@ -41,7 +41,8 @@ public class NoteRepository : ICrudRepository<Note>
         return await _db.SaveChangesAsync(ct) > 0;
     }
 
-    //検索機能を持たないので、未実装
+    // 検索、1件取得（登録、更新、削除に利用）
+
     public async Task<Note?> GetByIdAsync(long id, CancellationToken ct = default)
         => await _db.DbNote.FindAsync(id, ct);
 

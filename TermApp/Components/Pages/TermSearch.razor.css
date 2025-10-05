@@ -1,0 +1,47 @@
+﻿/* 画面下に常時固定（スクロールしても常に見えるフッターバー） */
+.paginator-fixed {
+    position: fixed; /* ビューポート基準で固定配置 */
+    left: 0; /* 左端に張り付け */
+    right: 0; /* 右端に張り付け（＝全幅） */
+    bottom: 0; /* 画面の最下部に固定 */
+    z-index: 1030; /* ヘッダーなどより前面に出す（BootstrapのNavbarより少し高め） */
+    background: var(--bs-body-bg); /* 背景色：Bootstrapのボディ背景に合わせる */
+    border-top: 1px solid /* 上境界線（仕切り） */
+    var(--bs-border-color, #dee2e6); /* Bootstrapのボーダーカラー。未定義時は #dee2e6 をフォールバック */
+    padding: .5rem 0; /* 上下の内側余白（高さ調整） */
+}
+
+/* レイアウト幅に合わせて中央寄せ（中身を最大幅に制限しつつ中央配置） */
+.paginator-inner {
+    max-width: 1100px; /* 中身の最大幅。コンテンツ幅に合わせて調整するポイント */
+    margin: 0 auto; /* 左右オートで中央寄せ */
+    padding: 0 1rem; /* 左右に少し余白（画面端に張り付くのを防ぐ） */
+}
+
+/* 固定フッターバーと重ならないよう、ページ全体の下に余白を確保する */
+.page-wrap {
+    padding-bottom: 64px; /* 固定バーの実高さ＋αを確保（.5rem上下＋境界線等に合わせて調整） */
+}
+/* ↑ 実際のバーの高さに合わせて数値を調整する（例：ボタンが増えて高さが変わったらここも更新） */
+
+/* ====== ここから “ボタンを枠いっぱいに” タイト調整 ====== */
+
+/* 1) セルの左右パディングをゼロに（枠にピッタリ付ける） */
+.my-grid :is(thead th, tbody td):nth-child(4) {
+    padding: 0; /* ← ここ大事：セル余白をなくす */
+}
+
+/* 2) もしセル内に <div class="d-flex ..."> ラッパがある場合も全幅に */
+.my-grid tbody td:nth-child(4) > div {
+    display: block; /* 中央寄せflexを無効にしてブロック化 */
+}
+
+/* 3) ボタン/リンク自体をセル幅100%にして角丸を外す（完全フィット） */
+.my-grid td:nth-child(4) a.btn {
+    display: block; /* インライン要素→ブロックに */
+    width: 100%; /* セル幅いっぱい */
+    border-radius: 0; /* 角丸を外して枠にタイトに */
+    margin: 0; /* 余白を完全に排除 */
+    padding-left: 0; /* 横パディングも削ると更にタイト */
+    padding-right: 0; /* 必要なら上下だけ残す */
+}

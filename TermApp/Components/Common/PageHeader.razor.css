@@ -1,0 +1,51 @@
+﻿/* 行内レイアウトを1行に固定 */
+.page-header {
+    display: flex;
+    align-items: center; /* 垂直中央 */
+    justify-content: space-between;
+    gap: .75rem;
+    margin: 0 0 1rem;
+    /* sticky を使っているなら以下もそのまま */
+    position: sticky;
+    top: 0;
+    z-index: 1020;
+    background: var(--bs-body-bg);
+    border-bottom: 1px solid var(--bs-border-color, #dee2e6);
+    padding: .5rem 0 .75rem;
+}
+
+/* 左側（タイトル塊）は縮小OK＆省略OK */
+.page-title-area {
+    flex: 1 1 auto; /* 余白が足りなければここが縮む */
+    min-width: 0; /* ← これが無いと省略(...)が効かない */
+}
+
+/* タイトルは1行・省略 */
+.page-title {
+    font-size: clamp(1.6rem, 1.2rem + 1vw, 2rem);
+    font-weight: 800;
+    letter-spacing: .02em;
+    margin: 0;
+    line-height: 1.2;
+    white-space: nowrap; /* 折り返さない */
+    overflow: hidden; /* はみ出し隠す */
+    text-overflow: ellipsis; /* …で省略 */
+}
+
+/* サブタイトルを使う場合は小さく・1行省略（任意） */
+.page-subtitle {
+    margin: .25rem 0 0;
+    color: var(--bs-secondary-color);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* 右側のボタン群は縮ませず1行固定 */
+.page-actions {
+    flex: 0 0 auto; /* 縮まない */
+    display: flex;
+    gap: .5rem;
+    flex-wrap: nowrap; /* ← 折り返さない */
+    white-space: nowrap; /* ボタン内テキストも折り返さない */
+}

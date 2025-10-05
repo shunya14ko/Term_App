@@ -7,7 +7,7 @@
 @inject IJSRuntime JS
 @rendermode InteractiveServer
 
-<h1 class="mb-3">■IT用語辞典</h1>
+<PageHeader Title="■単語一覧"></PageHeader>
 
 @if (!string.IsNullOrEmpty(_pageError))
 {
@@ -30,29 +30,32 @@ else
         <PropertyColumn Title="作成日" Property="@(p => p.CreatedAt)" Sortable="true" Format="yyyy-MM-dd" />
 
         <TemplateColumn Title="詳細" Context="term">
-            <div class="d-flex justify-content-center">
-                <NavLink class="btn btn-sm btn-secondary minw-64" href="@($"/detailform/{term.Id}")">詳細</NavLink>
-            </div>
+            <NavLink class="btn btn-sm btn-secondary w-100 d-block"
+                     href="@($"/detailform/{term.Id}")">
+                詳細
+            </NavLink>
         </TemplateColumn>
 
         <TemplateColumn Title="編集" Context="term">
-            <div class="d-flex justify-content-center">
-                <NavLink class="btn btn-sm btn-primary minw-64" href="@($"/terms/edit/{term.Id}")">編集</NavLink>
-            </div>
+            <NavLink class="btn btn-sm btn-primary w-100 d-block"
+                     href="@($"/terms/edit/{term.Id}")">
+                編集
+            </NavLink>
         </TemplateColumn>
 
         <TemplateColumn Title="削除" Context="term">
-            <div class="d-flex justify-content-center">
-                <button type="button"
-                        class="btn btn-sm btn-danger minw-64"
-                        @onclick="@(() => DeleteAsync(term.Id))">
-                    削除
-                </button>
-            </div>
+            <button type="button"
+                    class="btn btn-sm btn-danger w-100 d-block"
+                    @onclick="@(() => DeleteAsync(term.Id))">
+                削除
+            </button>
         </TemplateColumn>
     </QuickGrid>
-    <div class="mt-2">
-        <Paginator State="@_paginationState" />
+
+    <div class="mt-2 paginator-fixed">
+        <div class="paginator-inner">
+            <Paginator State="@_paginationState" />
+        </div>
     </div>
 
     @if (_items.Count == 0)
@@ -68,7 +71,7 @@ else
     private string? _pageError;
 
     // QuickGrid のページング設定
-    private readonly PaginationState _paginationState = new() { ItemsPerPage = 20 };
+    private readonly PaginationState _paginationState = new() { ItemsPerPage = 10 };
 
     // 削除ボタンのイベント
     private async Task DeleteAsync(long id)
@@ -116,70 +119,3 @@ else
     private void GoNew() => Nav.NavigateTo("/terms/new");
 }
 
-<style>
-    .my-grid {
-        font-size: .95rem;
-    }
-
-        /* ヘッダー固定＆視認性 */
-        .my-grid thead th {
-            position: sticky;
-            top: 0;
-            z-index: 2;
-            background: var(--bs-body-bg);
-        }
-
-        /* 縦中央（align-middleの補強） */
-        .my-grid th, .my-grid td {
-            vertical-align: middle;
-        }
-
-        /* No  */
-        .my-grid :is(thead th, tbody td):nth-child(1) {
-            width: 100px;
-            text-align: center;
-            white-space: nowrap;
-        }
-
-        /* 名称 */
-        .my-grid :is(thead th, tbody td):nth-child(2) { 
-            width: 100%;
-            white-space: normal;
-        }
-
-        /* 作成日 */
-        .my-grid :is(thead th, tbody td):nth-child(3) {
-            width: 100px;
-            text-align: center;
-            white-space: nowrap;
-        }
-
-        /* 4〜6列目のセルの幅を指定（列全体） */
-        .my-grid :is(thead th, tbody td):nth-child(4),
-        .my-grid :is(thead th, tbody td):nth-child(5),
-        .my-grid :is(thead th, tbody td):nth-child(6) {
-            width: 100px;
-            text-align: center;
-            white-space: nowrap;
-        }
-
-        /* セル内のdivを中央寄せ（display:flex;） */
-        .my-grid tbody td:nth-child(4) > div,
-        .my-grid tbody td:nth-child(5) > div,
-        .my-grid tbody td:nth-child(6) > div {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-
-    /* ボタンの最小幅） */
-    .minw-64 {
-        min-width: 100px;
-    }
-
-    /* 行ホバーは table-hover に任せつつ少し強調 */
-    .my-grid tbody tr:hover {
-        background-color: var(--bs-table-hover-bg);
-    }
-
-</style>

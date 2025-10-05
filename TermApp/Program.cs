@@ -25,9 +25,9 @@ class Program
         builder.Configuration.AddEnvironmentVariables();
 
         // --- DB 接続 ---
+        // configファイルから接続情報を取得して接続文字列を生成
         try
         {
-            // DbConnect は IConfiguration から値を読み、接続文字列を生成する実装にしておく
             var conn = DbConnect.BuildConnectionString(builder.Configuration);
 
             builder.Services.AddDbContext<AllDbContext>(options =>
@@ -41,27 +41,36 @@ class Program
             throw;
         }
 
-        // DI
+        // DI注入
         builder.Services.AddScoped<ICrudRepository<Term>, TermRepository>();
         builder.Services.AddScoped<ICrudRepository<Note>, NoteRepository>();
         builder.Services.AddScoped<ICrudRepository<Group>, GroupRepository>();
 
+        // --- Razor Components ---
         builder.Services
             .AddRazorComponents()
             .AddInteractiveServerComponents(o => { o.DetailedErrors = true; });
 
+        // App のオブジェクトを生成
         var app = builder.Build();
 
+        // 公開したら使用するかもしれない例外ページだけど現状は使用しない
         if (!app.Environment.IsDevelopment())
         {
             app.UseExceptionHandler("/Error", createScopeForErrors: true);
             app.UseHsts();
         }
 
+        // HTTPアクセスを自動的にHTTPSへリダイレクト。
         app.UseHttpsRedirection();
+
+        // クロスサイトリクエストフォージェリ（CSRF）攻撃を防ぐためのトークンを発行・検証 
         app.UseAntiforgery();
+
+        // 静的ファイルを有効化
         app.MapStaticAssets();
 
+        // Razor Components のエントリーポイント選定とアプリケーションの起動・構成
         app.MapRazorComponents<App>()
            .AddInteractiveServerRenderMode();
 

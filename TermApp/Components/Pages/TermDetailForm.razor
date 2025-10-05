@@ -3,7 +3,16 @@
 @using TermApp.Models
 @inject ICrudRepository<Term> TermRepo
 @inject ICrudRepository<Note> NoteRepo
+@inject ICrudRepository<Group> GroupRepo
 @inject NavigationManager Nav
+
+<PageHeader Title="■詳細内容">
+    <Actions>
+        <NavLink class="btn btn-outline-secondary" href="/term">
+            一覧に戻る
+        </NavLink>
+    </Actions>
+</PageHeader>
 
 <div class="container-fluid py-4">
     @if (_loading)
@@ -20,9 +29,6 @@
     }
     else
     {
-        <div class="mb-4">
-            <h1 class="mb-0">■詳細内容の確認</h1>
-        </div>
 
         <div class="mb-3">
             <label class="form-label">ID</label>
@@ -44,14 +50,15 @@
             <textarea class="form-control form-control-lg textarea-formatt" readonly>@(_note?.Content ?? "")</textarea>
         </div>
 
+        <div class="mb-3">
+            <label class="form-label">グループ</label>
+            <input class="form-control form-control-lg" readonly
+                   value="@(_group?.Name ?? "（未選択）")" />
+        </div>
+
         <div class="text-muted">
             最終更新: @(_note is null ? "—" : _note.UpdatedAt.ToString("yyyy-MM-dd HH:mm"))
         </div>
-
-        <div class="mt-4 d-flex gap-2">
-            <NavLink class="btn btn-outline-secondary" href="/Term">■一覧に戻る</NavLink>
-        </div>
-
     }
 </div>
 
@@ -61,13 +68,16 @@
     private Note? _note;
     private bool _loading = true;
     private string? _error;
+    private Group? _group;
 
+    // Id取得を起動時に行ってくれる
     protected override async Task OnParametersSetAsync()
     {
         _loading = true;
         _error = null;
         _item = null;
         _note = null;
+        _group = null;
 
         try
         {
@@ -79,8 +89,14 @@
                 _error = "対象データが見つかりません。";
                 return;
             }
+
+            // ★ グループを取得（所属していない場合は null のまま）
+            if (_item.GroupId is long gid)
+            {
+                _group = await GroupRepo.GetByIdAsync(gid);
+            }
         }
-        catch (Exception)
+        catch
         {
             _error = "詳細データを取得できませんでした。";
         }
@@ -89,4 +105,5 @@
             _loading = false;
         }
     }
+
 }

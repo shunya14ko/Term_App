@@ -1,0 +1,95 @@
+﻿@page "/groups/new"
+@rendermode InteractiveServer
+
+@using System.ComponentModel.DataAnnotations
+@using Microsoft.AspNetCore.Components
+@using TermApp.Models
+@using TermApp.Service.Repository
+
+@inject ICrudRepository<Group> GroupRepo
+@inject NavigationManager Nav
+
+
+<PageHeader Title="■グループ追加">
+    <Actions>
+        <NavLink class="btn btn-outline-secondary" href="/term">
+            一覧に戻る
+        </NavLink>
+    </Actions>
+</PageHeader>
+
+<div class="fullpage-form d-flex flex-column h-100">
+    <div class="mx-auto form-max w-100">
+
+        @if (!string.IsNullOrEmpty(_pageError))
+        {
+            <div class="alert alert-danger">@_pageError</div>
+        }
+
+        <div class="card shadow-sm flex-grow-1">
+            <div class="card-body d-flex flex-column overflow-hidden">
+                <EditForm Model="_form" OnValidSubmit="SaveAsync" class="d-flex flex-column flex-grow-1">
+                    <DataAnnotationsValidator />
+                    <ValidationSummary class="alert alert-warning" />
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">グループ名（必須）</label>
+                        <InputText class="form-control form-control-lg"
+                                   placeholder="例）プログラミング"
+                                   @bind-Value="_form.Name" />
+                        <div class="form-text">最大255文字。</div>
+                        <ValidationMessage For="@(() => _form.Name)" />
+                    </div>
+
+                    <div class="mt-auto d-flex gap-2 pt-2">
+                        <button class="btn btn-primary btn-lg px-4" type="submit" disabled="@_saving">
+                            @(_saving ? "保存中…" : "保存")
+                        </button>
+                    </div>
+                </EditForm>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    [SupplyParameterFromQuery(Name = "return")]
+    public string? _returnUrl { get; set; }
+
+    private sealed class GroupFormModel
+    {
+        [Required(ErrorMessage = "グループ名は必須です。")]
+        [StringLength(255)]
+        public string Name { get; set; } = string.Empty;
+    }
+
+    private GroupFormModel _form = new();
+    private string? _pageError;
+    private bool _saving;
+
+    private async Task SaveAsync()
+    {
+        if (_saving) return;
+        _saving = true;
+
+        try
+        {
+            var g = new Group { Name = _form.Name.Trim() };
+            await GroupRepo.AddAsync(g);
+
+            // 保存後は戻り先へ遷移
+            Nav.NavigateTo(_returnUrl ?? "/groups/new");
+        }
+        catch (Exception ex)
+        {
+            _pageError = "保存に失敗しました。時間をおいて再度お試しください。";
+            Console.WriteLine(ex);
+        }
+        finally
+        {
+            _saving = false;
+        }
+    }
+}
+
+

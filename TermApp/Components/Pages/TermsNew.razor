@@ -10,7 +10,9 @@
 
 <PageHeader Title="■単語追加">
     <Actions>
-        <NavLink class="btn btn-outline-secondary" href="/term">
+        <NavLink class="btn btn-outline-primary"
+        ActiveClass=""
+        href="/term">
             単語一覧に戻る
         </NavLink>
     </Actions>
@@ -132,7 +134,7 @@
                 await NoteRepo.AddAsync(note);
             }
 
-            Nav.NavigateTo("/terms");
+            Nav.NavigateTo("/term");
         }
         catch (Exception ex)
         {
